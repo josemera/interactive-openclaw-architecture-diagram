@@ -1,0 +1,2397 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>OpenClaw — Interactive Architecture v2</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@300;400;600;700&family=Syne:wght@400;600;800&display=swap');
+
+:root {
+  --orange: #F47B20;
+  --gold: #FFB347;
+  --bg: #0A0A0A;
+  --surface: #111111;
+  --surface2: #161616;
+  --surface3: #0D0D0D;
+  --border: rgba(244,123,32,0.22);
+  --text: #F0EDE8;
+  --muted: #666;
+  --blue: #3BBFFF;
+  --green: #4DFFA0;
+  --purple: #C084FC;
+  --yellow: #FFE566;
+  --red: #FF6B6B;
+  --teal: #2DD4BF;
+  --pink: #F472B6;
+}
+
+* { box-sizing: border-box; margin: 0; padding: 0; }
+
+body {
+  background: var(--bg);
+  color: var(--text);
+  font-family: 'JetBrains Mono', monospace;
+  min-height: 100vh;
+  overflow-x: hidden;
+}
+
+body::after {
+  content: '';
+  position: fixed; inset: 0;
+  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.04'/%3E%3C/svg%3E");
+  pointer-events: none; z-index: 9999; opacity: 0.5;
+}
+
+/* ─── VIEWS ─── */
+.view { display: none; min-height: 100vh; }
+.view.active { display: block; }
+
+/* ─── OVERVIEW ─── */
+#overview { padding: 36px 40px 80px; }
+
+.ov-header {
+  margin-bottom: 28px;
+  border-bottom: 1px solid var(--border);
+  padding-bottom: 20px;
+  display: flex; align-items: flex-end; justify-content: space-between; flex-wrap: wrap; gap: 12px;
+}
+.ov-header h1 { font-family: 'Syne', sans-serif; font-size: clamp(24px, 3.2vw, 46px); font-weight: 800; letter-spacing: -1px; }
+.ov-header h1 span { color: var(--orange); }
+.ov-header p { font-size: 10px; color: var(--muted); letter-spacing: 2.5px; text-transform: uppercase; }
+
+.hint-bar {
+  background: rgba(244,123,32,0.05); border: 1px solid rgba(244,123,32,0.18);
+  border-radius: 6px; padding: 10px 16px; font-size: 11px; color: var(--muted);
+  margin-bottom: 24px; letter-spacing: 0.3px;
+}
+.hint-bar span { color: var(--orange); }
+
+.legend {
+  display: flex; flex-wrap: wrap; gap: 16px; margin-bottom: 28px;
+  padding: 12px 16px; background: var(--surface); border: 1px solid var(--border); border-radius: 8px;
+}
+.li { display: flex; align-items: center; gap: 6px; font-size: 9.5px; color: var(--muted); text-transform: uppercase; letter-spacing: 1px; }
+.ld { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; }
+.ll { width: 22px; height: 2px; border-radius: 2px; flex-shrink: 0; }
+
+/* ─── OVERVIEW GRID — 2 col ─── */
+.ov-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 28px; }
+
+.layer-card {
+  background: var(--surface); border: 1px solid var(--border); border-radius: 12px;
+  padding: 22px 22px 18px; position: relative; overflow: hidden;
+  cursor: pointer; transition: border-color 0.2s, transform 0.15s, box-shadow 0.2s;
+}
+.layer-card::before {
+  content: ''; position: absolute; top: 0; left: 0; right: 0; height: 3px; border-radius: 12px 12px 0 0;
+}
+.layer-card.gateway::before   { background: var(--blue); }
+.layer-card.reasoning::before { background: var(--yellow); }
+.layer-card.memory::before    { background: var(--gold); }
+.layer-card.execution::before { background: var(--green); }
+.layer-card.security::before  { background: var(--red); }
+.layer-card.observability::before { background: var(--teal); }
+.layer-card.configuration::before{ background: var(--purple); }
+.layer-card.multiagent::before    { background: var(--pink); }
+
+.layer-card:hover { transform: translateY(-3px); }
+.layer-card.gateway:hover        { border-color: var(--blue);   box-shadow: 0 10px 36px rgba(59,191,255,0.12); }
+.layer-card.reasoning:hover      { border-color: var(--yellow); box-shadow: 0 10px 36px rgba(255,229,102,0.10); }
+.layer-card.memory:hover         { border-color: var(--gold);   box-shadow: 0 10px 36px rgba(255,179,71,0.10); }
+.layer-card.execution:hover      { border-color: var(--green);  box-shadow: 0 10px 36px rgba(77,255,160,0.10); }
+.layer-card.security:hover       { border-color: var(--red);    box-shadow: 0 10px 36px rgba(255,107,107,0.12); }
+.layer-card.observability:hover  { border-color: var(--teal);   box-shadow: 0 10px 36px rgba(45,212,191,0.10); }
+.layer-card.configuration:hover  { border-color: var(--purple); box-shadow: 0 10px 36px rgba(192,132,252,0.10); }
+.layer-card.multiagent:hover     { border-color: var(--pink);   box-shadow: 0 10px 36px rgba(244,114,182,0.10); }
+
+.card-click-hint {
+  position: absolute; top: 13px; right: 13px;
+  font-size: 9px; color: var(--muted); letter-spacing: 1.5px; text-transform: uppercase;
+  display: flex; align-items: center; gap: 4px; opacity: 0; transition: opacity 0.2s;
+}
+.card-click-hint::after { content: '→'; }
+.layer-card:hover .card-click-hint { opacity: 1; }
+
+.stability-pill {
+  position: absolute; top: 13px; left: 22px;
+  font-size: 8.5px; font-weight: 600; padding: 2px 8px; border-radius: 20px; letter-spacing: 0.5px;
+}
+.stable   { background: rgba(77,255,160,0.12); color: var(--green); border: 1px solid rgba(77,255,160,0.25); }
+.beta     { background: rgba(255,229,102,0.12); color: var(--yellow); border: 1px solid rgba(255,229,102,0.25); }
+.experimental { background: rgba(255,107,107,0.12); color: var(--red); border: 1px solid rgba(255,107,107,0.25); }
+
+.card-bg-icon { position: absolute; bottom: -8px; right: -8px; font-size: 72px; opacity: 0.035; pointer-events: none; line-height: 1; }
+
+.layer-title { font-family: 'Syne', sans-serif; font-size: 18px; font-weight: 800; margin-bottom: 2px; margin-top: 18px; }
+.gateway.layer-card .layer-title    { color: var(--blue); }
+.reasoning.layer-card .layer-title  { color: var(--yellow); }
+.memory.layer-card .layer-title     { color: var(--gold); }
+.execution.layer-card .layer-title  { color: var(--green); }
+.security.layer-card .layer-title   { color: var(--red); }
+.observability.layer-card .layer-title { color: var(--teal); }
+.configuration.layer-card .layer-title { color: var(--purple); }
+.multiagent.layer-card .layer-title    { color: var(--pink); }
+
+.layer-sub { font-size: 9px; color: var(--muted); text-transform: uppercase; letter-spacing: 2px; margin-bottom: 12px; }
+
+.feat-list { list-style: none; display: flex; flex-direction: column; gap: 4px; margin-bottom: 12px; }
+.feat-list li { font-size: 11px; color: #CCC; display: flex; align-items: flex-start; gap: 7px; line-height: 1.5; }
+.feat-list li::before { content: '▸'; font-size: 8.5px; flex-shrink: 0; margin-top: 3px; }
+
+.gateway.layer-card   .feat-list li::before { color: var(--blue); }
+.reasoning.layer-card .feat-list li::before { color: var(--yellow); }
+.memory.layer-card    .feat-list li::before { color: var(--gold); }
+.execution.layer-card .feat-list li::before { color: var(--green); }
+.security.layer-card  .feat-list li::before { color: var(--red); }
+.observability.layer-card .feat-list li::before { color: var(--teal); }
+.configuration.layer-card .feat-list li::before { color: var(--purple); }
+.multiagent.layer-card    .feat-list li::before { color: var(--pink); }
+
+.badges { display: flex; flex-wrap: wrap; gap: 5px; padding-top: 10px; border-top: 1px solid rgba(255,255,255,0.05); }
+.badge { font-size: 9px; font-weight: 600; padding: 2px 8px; border-radius: 20px; border: 1px solid; display: flex; align-items: center; gap: 4px; }
+.b-blue   { color: var(--blue);   border-color: rgba(59,191,255,0.3);  background: rgba(59,191,255,0.06); }
+.b-green  { color: var(--green);  border-color: rgba(77,255,160,0.3);  background: rgba(77,255,160,0.06); }
+.b-purple { color: var(--purple); border-color: rgba(192,132,252,0.3); background: rgba(192,132,252,0.06); }
+.b-yellow { color: var(--yellow); border-color: rgba(255,229,102,0.3); background: rgba(255,229,102,0.06); }
+.b-gold   { color: var(--gold);   border-color: rgba(255,179,71,0.3);  background: rgba(255,179,71,0.06); }
+.b-red    { color: var(--red);    border-color: rgba(255,107,107,0.3); background: rgba(255,107,107,0.06); }
+.b-teal   { color: var(--teal);   border-color: rgba(45,212,191,0.3);  background: rgba(45,212,191,0.06); }
+.b-pink   { color: var(--pink);   border-color: rgba(244,114,182,0.3); background: rgba(244,114,182,0.06); }
+
+.pulse { width: 5px; height: 5px; border-radius: 50%; animation: pulse 2s infinite; }
+.b-blue   .pulse { background: var(--blue); }
+.b-green  .pulse { background: var(--green); }
+.b-purple .pulse { background: var(--purple); }
+.b-yellow .pulse { background: var(--yellow); }
+.b-gold   .pulse { background: var(--gold); }
+.b-red    .pulse { background: var(--red); }
+.b-teal   .pulse { background: var(--teal); }
+.b-pink   .pulse { background: var(--pink); }
+@keyframes pulse { 0%,100%{opacity:1;transform:scale(1)} 50%{opacity:0.3;transform:scale(0.6)} }
+
+@keyframes dash { to { stroke-dashoffset: -24; } }
+.anim { stroke-dasharray: 8 4; animation: dash 1.4s linear infinite; }
+
+/* ─── DEEP DIVE SHARED ─── */
+.dd-topbar {
+  position: sticky; top: 0; z-index: 100;
+  background: rgba(10,10,10,0.96); backdrop-filter: blur(12px);
+  border-bottom: 1px solid var(--border);
+  padding: 12px 40px; display: flex; align-items: center; gap: 18px;
+}
+.back-btn {
+  display: flex; align-items: center; gap: 7px; font-size: 10.5px; color: var(--muted);
+  cursor: pointer; letter-spacing: 1px; text-transform: uppercase;
+  border: 1px solid rgba(255,255,255,0.1); padding: 5px 12px; border-radius: 6px;
+  transition: all 0.2s; background: none;
+}
+.back-btn:hover { color: var(--text); border-color: rgba(255,255,255,0.22); }
+.dd-breadcrumb { font-size: 10.5px; color: var(--muted); }
+.dd-breadcrumb span { color: var(--text); }
+
+/* stability badge in topbar */
+.stability-topbar {
+  margin-left: auto; font-size: 9px; font-weight: 600;
+  padding: 3px 10px; border-radius: 20px; letter-spacing: 0.5px;
+}
+
+.dd-content { padding: 44px 48px 80px; max-width: 1300px; margin: 0 auto; }
+
+.dd-hero { margin-bottom: 48px; }
+.dd-tag { font-size: 9px; letter-spacing: 3px; text-transform: uppercase; color: var(--muted); margin-bottom: 10px; }
+.dd-hero h2 { font-family: 'Syne', sans-serif; font-size: clamp(28px, 4.5vw, 52px); font-weight: 800; letter-spacing: -1.5px; margin-bottom: 14px; line-height: 1.05; }
+.dd-hero p { font-size: 12.5px; color: #AAA; line-height: 1.95; max-width: 800px; }
+
+.s-title {
+  font-family: 'Syne', sans-serif; font-size: 10.5px; letter-spacing: 3px; text-transform: uppercase;
+  color: var(--muted); margin-bottom: 18px; display: flex; align-items: center; gap: 14px;
+}
+.s-title::after { content:''; flex:1; height:1px; background: var(--border); }
+
+.diagram-box {
+  background: var(--surface); border: 1px solid var(--border);
+  border-radius: 12px; padding: 24px; margin-bottom: 36px; overflow-x: auto;
+}
+.diagram-box svg { width: 100%; height: auto; display: block; }
+
+.two-col   { display: grid; grid-template-columns: 1fr 1fr; gap: 18px; margin-bottom: 36px; }
+.three-col { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 14px; margin-bottom: 36px; }
+.four-col  { display: grid; grid-template-columns: 1fr 1fr 1fr 1fr; gap: 12px; margin-bottom: 36px; }
+
+.info-card { background: var(--surface2); border: 1px solid rgba(255,255,255,0.06); border-radius: 10px; padding: 18px; }
+.info-card h4 { font-family: 'Syne', sans-serif; font-size: 12.5px; font-weight: 700; margin-bottom: 10px; }
+.info-card p, .info-card li { font-size: 11px; color: #999; line-height: 1.85; }
+.info-card ul { list-style: none; padding: 0; }
+.info-card ul li::before { content: '▸ '; color: var(--muted); }
+.info-card ul li { margin-bottom: 3px; }
+
+/* failure mode card */
+.failure-card {
+  background: rgba(255,107,107,0.04); border: 1px solid rgba(255,107,107,0.2);
+  border-radius: 10px; padding: 18px;
+}
+.failure-card h4 { font-family: 'Syne', sans-serif; font-size: 12.5px; font-weight: 700; color: var(--red); margin-bottom: 10px; }
+.failure-card p, .failure-card li { font-size: 11px; color: #999; line-height: 1.85; }
+.failure-card ul { list-style: none; }
+.failure-card ul li::before { content: '⚠ '; color: var(--red); opacity: 0.7; }
+.failure-card ul li { margin-bottom: 4px; }
+
+.code-block {
+  background: var(--surface3); border: 1px solid rgba(255,255,255,0.07);
+  border-radius: 8px; padding: 16px 18px; margin: 12px 0; overflow-x: auto;
+  font-size: 11px; line-height: 1.8; color: #CCC;
+  white-space: pre-wrap; word-break: break-word;
+}
+.code-block .k  { color: #C084FC; }
+.code-block .s  { color: #4DFFA0; }
+.code-block .c  { color: #555; font-style: italic; }
+.code-block .n  { color: #3BBFFF; }
+.code-block .o  { color: #FFB347; }
+.code-block .t  { color: #FFE566; }
+.code-block .r  { color: #FF6B6B; }
+
+.tech-table { width: 100%; border-collapse: collapse; font-size: 11px; margin-bottom: 36px; }
+.tech-table th { text-align: left; padding: 9px 13px; font-size: 9px; letter-spacing: 2px; text-transform: uppercase; color: var(--muted); border-bottom: 1px solid var(--border); }
+.tech-table td { padding: 9px 13px; border-bottom: 1px solid rgba(255,255,255,0.03); color: #BBB; vertical-align: top; }
+.tech-table tr:last-child td { border-bottom: none; }
+.tech-table td:first-child { color: var(--text); font-weight: 600; }
+
+.divider { height: 1px; background: var(--border); margin: 36px 0; }
+
+/* color helpers */
+.c-blue   { color: var(--blue) !important; }
+.c-yellow { color: var(--yellow) !important; }
+.c-gold   { color: var(--gold) !important; }
+.c-green  { color: var(--green) !important; }
+.c-orange { color: var(--orange) !important; }
+.c-purple { color: var(--purple) !important; }
+.c-red    { color: var(--red) !important; }
+.c-teal   { color: var(--teal) !important; }
+.c-pink   { color: var(--pink) !important; }
+.c-muted  { color: var(--muted) !important; }
+
+/* flow box */
+.flow-box { background: var(--surface); border: 1px solid var(--border); border-radius: 12px; padding: 22px; overflow-x: auto; }
+.flow-box svg { width: 100%; height: auto; display: block; }
+
+.dd-view { animation: fadeIn 0.22s ease; }
+@keyframes fadeIn { from{opacity:0;transform:translateY(6px)} to{opacity:1;transform:translateY(0)} }
+.ov-grid .layer-card { animation: fadeUp 0.4s ease both; }
+.layer-card:nth-child(1){animation-delay:0.04s} .layer-card:nth-child(2){animation-delay:0.08s}
+.layer-card:nth-child(3){animation-delay:0.12s} .layer-card:nth-child(4){animation-delay:0.16s}
+.layer-card:nth-child(5){animation-delay:0.20s} .layer-card:nth-child(6){animation-delay:0.24s}
+.layer-card:nth-child(7){animation-delay:0.28s} .layer-card:nth-child(8){animation-delay:0.32s}
+@keyframes fadeUp { from{opacity:0;transform:translateY(12px)} to{opacity:1;transform:translateY(0)} }
+
+@media (max-width: 780px) {
+  .ov-grid,.two-col,.three-col,.four-col{grid-template-columns:1fr}
+  .dd-content{padding:24px 18px 60px}
+  #overview{padding:24px 18px 60px}
+}
+</style>
+</head>
+<body>
+
+<!-- ══════════ OVERVIEW ══════════ -->
+<div id="overview" class="view active">
+  <div class="ov-header">
+    <div>
+      <h1>Open<span>Claw</span> — System Architecture</h1>
+      <p style="margin-top:6px">8 Layers · All Loops · Full Data Flow · v2026</p>
+    </div>
+  </div>
+
+  <div class="hint-bar"><span>↗ Click any layer card</span> to drill into its internal architecture, data flows, failure modes, and implementation patterns — written for senior engineers</div>
+
+  <div class="legend">
+    <div class="li"><div class="ld" style="background:var(--blue)"></div>Node.js Event Loop</div>
+    <div class="li"><div class="ld" style="background:var(--green)"></div>Heartbeat Loop</div>
+    <div class="li"><div class="ld" style="background:var(--purple)"></div>Cron Loop</div>
+    <div class="li"><div class="ld" style="background:var(--yellow)"></div>Context Window Guard</div>
+    <div class="li"><div class="ld" style="background:var(--gold)"></div>Summarization Loop</div>
+    <div class="li"><div class="ld" style="background:var(--pink)"></div>Agentic Tool Loop</div>
+    <div class="li"><div class="ll" style="background:var(--orange)"></div>Primary flow</div>
+    <div class="li"><div class="ll" style="background:var(--muted)"></div>Async / write-back</div>
+    <div class="li"><div class="ld" style="background:var(--green);border-radius:2px"></div>STABLE</div>
+    <div class="li"><div class="ld" style="background:var(--yellow);border-radius:2px"></div>BETA</div>
+    <div class="li"><div class="ld" style="background:var(--red);border-radius:2px"></div>EXPERIMENTAL</div>
+  </div>
+
+  <div class="ov-grid">
+    <!-- GATEWAY -->
+    <div class="layer-card gateway" onclick="showView('dd-gateway')">
+      <div class="stability-pill stable">STABLE</div>
+      <div class="card-click-hint">deep dive</div>
+      <div class="card-bg-icon">⬡</div>
+      <div class="layer-title">Gateway</div>
+      <div class="layer-sub">Orchestration & I/O Layer</div>
+      <ul class="feat-list">
+        <li>Background daemon — launchd / systemd</li>
+        <li>Channel Adapters — CLI, API, webhooks</li>
+        <li>Normalize all input → JSONL Envelope</li>
+        <li>Cron Scheduler — ~/.openclaw/cron/</li>
+        <li>Heartbeat timer — proactive agent pulse</li>
+      </ul>
+      <div class="badges">
+        <span class="badge b-blue"><span class="pulse"></span>Node.js Event Loop</span>
+        <span class="badge b-green"><span class="pulse"></span>Heartbeat</span>
+        <span class="badge b-purple"><span class="pulse"></span>Cron</span>
+      </div>
+    </div>
+
+    <!-- REASONING -->
+    <div class="layer-card reasoning" onclick="showView('dd-reasoning')">
+      <div class="stability-pill stable">STABLE</div>
+      <div class="card-click-hint">deep dive</div>
+      <div class="card-bg-icon">◎</div>
+      <div class="layer-title">Reasoning</div>
+      <div class="layer-sub">LLM Inference Layer</div>
+      <ul class="feat-list">
+        <li>Model Agnostic — Claude, GPT, Gemini, Ollama</li>
+        <li>Mega Prompt assembly per turn</li>
+        <li>Context Window Guard + map-reduce compaction</li>
+        <li>Streaming token buffer + mid-stream tool extraction</li>
+        <li>Multi-model routing — primary / fallback / summary</li>
+      </ul>
+      <div class="badges">
+        <span class="badge b-yellow"><span class="pulse"></span>Context Guard</span>
+        <span class="badge b-gold"><span class="pulse"></span>Summarization Loop</span>
+      </div>
+    </div>
+
+    <!-- MEMORY -->
+    <div class="layer-card memory" onclick="showView('dd-memory')">
+      <div class="stability-pill stable">STABLE</div>
+      <div class="card-click-hint">deep dive</div>
+      <div class="card-bg-icon">◈</div>
+      <div class="layer-title">Memory</div>
+      <div class="layer-sub">Persistence Layer</div>
+      <ul class="feat-list">
+        <li>Session transcripts — JSONL under agents/&lt;id&gt;/sessions/</li>
+        <li>Bootstrap files — AGENTS.md, SOUL.md, TOOLS.md, USER.md, IDENTITY.md, HEARTBEAT.md, BOOTSTRAP.md auto-injected into every prompt</li>
+        <li>MEMORY.md — durable long-term notes, auto-injected</li>
+        <li>memory/YYYY-MM-DD.md — daily notes written by agent before compaction (on-demand, not auto-injected)</li>
+        <li>Optional vector index over .md files for semantic recall</li>
+      </ul>
+      <div class="badges">
+        <span class="badge b-yellow"><span class="pulse"></span>Compact on overflow</span>
+        <span class="badge b-gold"><span class="pulse"></span>memoryFlush pre-compact</span>
+      </div>
+    </div>
+
+    <!-- EXECUTION -->
+    <div class="layer-card execution" onclick="showView('dd-execution')">
+      <div class="stability-pill stable">STABLE</div>
+      <div class="card-click-hint">deep dive</div>
+      <div class="card-bg-icon">⚒</div>
+      <div class="layer-title">Execution</div>
+      <div class="layer-sub">Tool & Skill Runtime</div>
+      <ul class="feat-list">
+        <li>50 Core Skills — TypeScript async functions</li>
+        <li>MCP protocol — JSON-RPC over stdio / HTTP</li>
+        <li>Skill Registry — dynamic allowlist enforcement</li>
+        <li>Agentic loop — tool → result → tool → final response</li>
+      </ul>
+      <div class="badges">
+        <span class="badge b-blue"><span class="pulse"></span>Event-driven dispatch</span>
+        <span class="badge b-pink"><span class="pulse"></span>Agentic Tool Loop</span>
+      </div>
+    </div>
+
+    <!-- SECURITY -->
+    <div class="layer-card security" onclick="showView('dd-security')">
+      <div class="stability-pill beta">BETA</div>
+      <div class="card-click-hint">deep dive</div>
+      <div class="card-bg-icon">🔒</div>
+      <div class="layer-title">Security & Trust</div>
+      <div class="layer-sub">Threat Model & Mitigations</div>
+      <ul class="feat-list">
+        <li>Prompt injection — primary attack vector, no reliable LLM defense</li>
+        <li>Sandbox: Docker-based OS isolation — readOnlyRoot, network:none, capDrop:ALL, seccomp, AppArmor</li>
+        <li>Default: tools run on host for main session (no sandbox)</li>
+        <li>sandbox.mode: "non-main" — groups/channels run in per-session Docker</li>
+        <li>Tool allow/deny per agent and per cron job</li>
+      </ul>
+      <div class="badges">
+        <span class="badge b-red"><span class="pulse"></span>Threat Model</span>
+        <span class="badge b-red"><span class="pulse"></span>Docker Isolation</span>
+      </div>
+    </div>
+
+    <!-- OBSERVABILITY -->
+    <div class="layer-card observability" onclick="showView('dd-observability')">
+      <div class="stability-pill beta">BETA</div>
+      <div class="card-click-hint">deep dive</div>
+      <div class="card-bg-icon">📡</div>
+      <div class="layer-title">Observability</div>
+      <div class="layer-sub">Telemetry & Diagnostics</div>
+      <ul class="feat-list">
+        <li>Structured turn logs — per-session JSONL trace</li>
+        <li>Token usage telemetry — per-turn, per-model</li>
+        <li>Skill call trace — latency, args, result size</li>
+        <li>Compaction event history — tokens reclaimed</li>
+        <li>LLM latency histogram — p50/p95/p99</li>
+      </ul>
+      <div class="badges">
+        <span class="badge b-teal"><span class="pulse"></span>Structured Logs</span>
+        <span class="badge b-teal"><span class="pulse"></span>Token Telemetry</span>
+      </div>
+    </div>
+
+    <!-- CONFIGURATION -->
+    <div class="layer-card configuration" onclick="showView('dd-configuration')">
+      <div class="stability-pill stable">STABLE</div>
+      <div class="card-click-hint">deep dive</div>
+      <div class="card-bg-icon">⚙</div>
+      <div class="layer-title">Configuration</div>
+      <div class="layer-sub">Schema & Override Hierarchy</div>
+      <ul class="feat-list">
+        <li>openclaw.json — root config file</li>
+        <li>agents.defaults — base agent settings</li>
+        <li>Per-agent overrides — model, skills, sandbox</li>
+        <li>Session-level overrides — ephemeral, not persisted</li>
+        <li>Config hierarchy — defaults → agent → session</li>
+      </ul>
+      <div class="badges">
+        <span class="badge b-purple"><span class="pulse"></span>Schema Validation</span>
+        <span class="badge b-purple"><span class="pulse"></span>Override Chain</span>
+      </div>
+    </div>
+
+    <!-- MULTI-AGENT -->
+    <div class="layer-card multiagent" onclick="showView('dd-multiagent')">
+      <div class="stability-pill experimental">EXPERIMENTAL</div>
+      <div class="card-click-hint">deep dive</div>
+      <div class="card-bg-icon">⬡</div>
+      <div class="layer-title">Multi-Agent</div>
+      <div class="layer-sub">Routing & Orchestration</div>
+      <ul class="feat-list">
+        <li>Gateway routing — static bindings dispatch to different agents by channel, sender, group</li>
+        <li>Session spawning — runtime tool call creates isolated sub-agent session</li>
+        <li>Separate workspaces, state, and session JSONL per agent</li>
+        <li>Sub-agent result returned as structured tool_result to parent</li>
+        <li>Recursive nesting — agent spawning agents</li>
+      </ul>
+      <div class="badges">
+        <span class="badge b-pink"><span class="pulse"></span>Static Routing</span>
+        <span class="badge b-pink"><span class="pulse"></span>Runtime Spawning</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- OVERVIEW FLOW DIAGRAM -->
+  <div class="s-title">Data Flow Across All Layers</div>
+  <div class="flow-box">
+    <svg viewBox="0 0 1140 420" xmlns="http://www.w3.org/2000/svg">
+      <defs>
+        <marker id="ao"  markerWidth="7" markerHeight="7" refX="5" refY="3" orient="auto"><path d="M0,0 L0,6 L7,3z" fill="#F47B20"/></marker>
+        <marker id="ab"  markerWidth="7" markerHeight="7" refX="5" refY="3" orient="auto"><path d="M0,0 L0,6 L7,3z" fill="#3BBFFF"/></marker>
+        <marker id="ag"  markerWidth="7" markerHeight="7" refX="5" refY="3" orient="auto"><path d="M0,0 L0,6 L7,3z" fill="#4DFFA0"/></marker>
+        <marker id="agold" markerWidth="7" markerHeight="7" refX="5" refY="3" orient="auto"><path d="M0,0 L0,6 L7,3z" fill="#FFB347"/></marker>
+        <marker id="ay"  markerWidth="7" markerHeight="7" refX="5" refY="3" orient="auto"><path d="M0,0 L0,6 L7,3z" fill="#FFE566"/></marker>
+        <marker id="ap"  markerWidth="7" markerHeight="7" refX="5" refY="3" orient="auto"><path d="M0,0 L0,6 L7,3z" fill="#C084FC"/></marker>
+        <marker id="apk" markerWidth="7" markerHeight="7" refX="5" refY="3" orient="auto"><path d="M0,0 L0,6 L7,3z" fill="#F472B6"/></marker>
+        <marker id="ateal" markerWidth="7" markerHeight="7" refX="5" refY="3" orient="auto"><path d="M0,0 L0,6 L7,3z" fill="#2DD4BF"/></marker>
+      </defs>
+      <!-- grid -->
+      <g opacity="0.045" stroke="#F47B20" stroke-width="1">
+        <line x1="0" y1="130" x2="1140" y2="130"/>
+        <line x1="0" y1="270" x2="1140" y2="270"/>
+        <line x1="200" y1="0" x2="200" y2="420"/>
+        <line x1="430" y1="0" x2="430" y2="420"/>
+        <line x1="660" y1="0" x2="660" y2="420"/>
+        <line x1="890" y1="0" x2="890" y2="420"/>
+      </g>
+
+      <!-- External -->
+      <rect x="10" y="160" width="112" height="80" rx="7" fill="#141414" stroke="#F47B20" stroke-width="1.3"/>
+      <text x="66" y="191" text-anchor="middle" font-family="Syne" font-size="11" font-weight="700" fill="#F47B20">External</text>
+      <text x="66" y="207" text-anchor="middle" font-family="JetBrains Mono" font-size="8.5" fill="#888">CLI / API</text>
+      <text x="66" y="221" text-anchor="middle" font-family="JetBrains Mono" font-size="8.5" fill="#888">Webhooks</text>
+
+      <!-- GATEWAY -->
+      <rect x="178" y="50" width="194" height="310" rx="9" fill="#141414" stroke="rgba(59,191,255,0.45)" stroke-width="1.5"/>
+      <text x="275" y="76" text-anchor="middle" font-family="Syne" font-size="13" font-weight="800" fill="#3BBFFF">GATEWAY</text>
+      <rect x="194" y="90" width="162" height="26" rx="5" fill="rgba(59,191,255,0.08)" stroke="rgba(59,191,255,0.18)" stroke-width="1"/>
+      <text x="275" y="107" text-anchor="middle" font-family="JetBrains Mono" font-size="9.5" fill="#3BBFFF">Channel Adapters</text>
+      <rect x="194" y="126" width="162" height="26" rx="5" fill="rgba(192,132,252,0.08)" stroke="rgba(192,132,252,0.22)" stroke-width="1"/>
+      <text x="275" y="143" text-anchor="middle" font-family="JetBrains Mono" font-size="9.5" fill="#C084FC">Cron Scheduler</text>
+      <rect x="194" y="162" width="162" height="26" rx="5" fill="rgba(77,255,160,0.08)" stroke="rgba(77,255,160,0.22)" stroke-width="1"/>
+      <text x="275" y="179" text-anchor="middle" font-family="JetBrains Mono" font-size="9.5" fill="#4DFFA0">Heartbeat (30m)</text>
+      <rect x="194" y="198" width="162" height="26" rx="5" fill="rgba(244,123,32,0.08)" stroke="rgba(244,123,32,0.22)" stroke-width="1"/>
+      <text x="275" y="215" text-anchor="middle" font-family="JetBrains Mono" font-size="9.5" fill="#F47B20">Normalize Format</text>
+      <rect x="194" y="268" width="162" height="78" rx="5" fill="rgba(59,191,255,0.04)" stroke="rgba(59,191,255,0.1)" stroke-width="1" stroke-dasharray="4 3"/>
+      <text x="275" y="300" text-anchor="middle" font-family="JetBrains Mono" font-size="9" fill="rgba(59,191,255,0.5)">⟳ Node.js Event Loop</text>
+      <text x="275" y="316" text-anchor="middle" font-family="JetBrains Mono" font-size="8.5" fill="rgba(59,191,255,0.35)">libuv — no threads</text>
+
+      <!-- REASONING -->
+      <rect x="426" y="50" width="194" height="310" rx="9" fill="#141414" stroke="rgba(255,229,102,0.45)" stroke-width="1.5"/>
+      <text x="523" y="76" text-anchor="middle" font-family="Syne" font-size="13" font-weight="800" fill="#FFE566">REASONING</text>
+      <rect x="442" y="90" width="162" height="26" rx="5" fill="rgba(255,229,102,0.08)" stroke="rgba(255,229,102,0.18)" stroke-width="1"/>
+      <text x="523" y="107" text-anchor="middle" font-family="JetBrains Mono" font-size="9.5" fill="#FFE566">Context Guard</text>
+      <rect x="442" y="126" width="162" height="26" rx="5" fill="rgba(255,229,102,0.06)" stroke="rgba(255,229,102,0.14)" stroke-width="1"/>
+      <text x="523" y="143" text-anchor="middle" font-family="JetBrains Mono" font-size="9.5" fill="#FFE566">Mega Prompt Build</text>
+      <rect x="442" y="162" width="162" height="26" rx="5" fill="rgba(244,123,32,0.08)" stroke="rgba(244,123,32,0.22)" stroke-width="1"/>
+      <text x="523" y="179" text-anchor="middle" font-family="JetBrains Mono" font-size="9.5" fill="#F47B20">LLM API (stream)</text>
+      <rect x="442" y="198" width="162" height="26" rx="5" fill="rgba(255,179,71,0.08)" stroke="rgba(255,179,71,0.22)" stroke-width="1"/>
+      <text x="523" y="215" text-anchor="middle" font-family="JetBrains Mono" font-size="9.5" fill="#FFB347">Summarization Loop</text>
+      <rect x="442" y="268" width="162" height="78" rx="5" fill="rgba(255,229,102,0.03)" stroke="rgba(255,229,102,0.08)" stroke-width="1" stroke-dasharray="4 3"/>
+      <text x="523" y="300" text-anchor="middle" font-family="JetBrains Mono" font-size="9" fill="rgba(255,229,102,0.45)">Model agnostic router</text>
+      <text x="523" y="316" text-anchor="middle" font-family="JetBrains Mono" font-size="8.5" fill="rgba(255,229,102,0.3)">primary / fallback / summary</text>
+
+      <!-- MEMORY -->
+      <rect x="680" y="50" width="172" height="160" rx="9" fill="#141414" stroke="rgba(255,179,71,0.45)" stroke-width="1.5"/>
+      <text x="766" y="76" text-anchor="middle" font-family="Syne" font-size="13" font-weight="800" fill="#FFB347">MEMORY</text>
+      <rect x="696" y="90" width="140" height="24" rx="5" fill="rgba(255,179,71,0.08)" stroke="rgba(255,179,71,0.18)" stroke-width="1"/>
+      <text x="766" y="106" text-anchor="middle" font-family="JetBrains Mono" font-size="9" fill="#FFB347">agents/&lt;id&gt;/sessions/*.jsonl</text>
+      <rect x="696" y="122" width="140" height="24" rx="5" fill="rgba(255,179,71,0.06)" stroke="rgba(255,179,71,0.14)" stroke-width="1"/>
+      <text x="766" y="138" text-anchor="middle" font-family="JetBrains Mono" font-size="9" fill="#FFB347">SOUL/AGENTS/TOOLS.md</text>
+      <rect x="696" y="154" width="140" height="24" rx="5" fill="rgba(255,179,71,0.06)" stroke="rgba(255,179,71,0.14)" stroke-width="1"/>
+      <text x="766" y="170" text-anchor="middle" font-family="JetBrains Mono" font-size="9" fill="#FFB347">MEMORY.md + memory/*.md</text>
+      <rect x="696" y="186" width="140" height="16" rx="4" fill="rgba(255,107,107,0.05)" stroke="rgba(255,107,107,0.12)" stroke-width="1" stroke-dasharray="3 3"/>
+      <text x="766" y="197" text-anchor="middle" font-family="JetBrains Mono" font-size="8" fill="rgba(255,107,107,0.5)">memoryFlush pre-compaction</text>
+
+      <!-- EXECUTION -->
+      <rect x="680" y="230" width="172" height="130" rx="9" fill="#141414" stroke="rgba(77,255,160,0.4)" stroke-width="1.5"/>
+      <text x="766" y="255" text-anchor="middle" font-family="Syne" font-size="13" font-weight="800" fill="#4DFFA0">EXECUTION</text>
+      <rect x="696" y="266" width="140" height="24" rx="5" fill="rgba(77,255,160,0.07)" stroke="rgba(77,255,160,0.18)" stroke-width="1"/>
+      <text x="766" y="282" text-anchor="middle" font-family="JetBrains Mono" font-size="9" fill="#4DFFA0">50 Skills · MCP</text>
+      <rect x="696" y="298" width="140" height="24" rx="5" fill="rgba(244,114,182,0.07)" stroke="rgba(244,114,182,0.18)" stroke-width="1"/>
+      <text x="766" y="314" text-anchor="middle" font-family="JetBrains Mono" font-size="9" fill="#F472B6">⟳ Agentic Loop</text>
+      <rect x="696" y="330" width="140" height="20" rx="4" fill="rgba(77,255,160,0.04)" stroke="rgba(77,255,160,0.1)" stroke-width="1" stroke-dasharray="3 3"/>
+      <text x="766" y="344" text-anchor="middle" font-family="JetBrains Mono" font-size="8" fill="rgba(77,255,160,0.5)">executes locally</text>
+
+      <!-- LLM Cloud -->
+      <ellipse cx="1000" cy="180" rx="82" ry="48" fill="rgba(244,123,32,0.07)" stroke="rgba(244,123,32,0.38)" stroke-width="1.5"/>
+      <text x="1000" y="174" text-anchor="middle" font-family="Syne" font-size="13" font-weight="800" fill="#F47B20">LLM</text>
+      <text x="1000" y="191" text-anchor="middle" font-family="JetBrains Mono" font-size="8.5" fill="#888">Claude/GPT/Gemini</text>
+      <text x="1000" y="205" text-anchor="middle" font-family="JetBrains Mono" font-size="8.5" fill="#888">Ollama/OpenRouter</text>
+
+      <!-- summaryModel cloud -->
+      <ellipse cx="1000" cy="340" rx="68" ry="40" fill="rgba(255,179,71,0.06)" stroke="rgba(255,179,71,0.28)" stroke-width="1.3" stroke-dasharray="5 3"/>
+      <text x="1000" y="334" text-anchor="middle" font-family="Syne" font-size="11" font-weight="700" fill="#FFB347">summaryModel</text>
+      <text x="1000" y="350" text-anchor="middle" font-family="JetBrains Mono" font-size="8" fill="#888">Sonnet / Flash</text>
+
+      <!-- Observability tap -->
+      <rect x="678" y="380" width="276" height="24" rx="5" fill="rgba(45,212,191,0.05)" stroke="rgba(45,212,191,0.18)" stroke-width="1" stroke-dasharray="4 3"/>
+      <text x="816" y="396" text-anchor="middle" font-family="JetBrains Mono" font-size="8.5" fill="rgba(45,212,191,0.55)">📡 Observability tap — all layers emit structured events</text>
+
+      <!-- ARROWS -->
+      <!-- External → Gateway -->
+      <path d="M124,200 L174,200" stroke="#F47B20" stroke-width="1.7" fill="none" marker-end="url(#ao)"/>
+      <!-- Gateway → Reasoning -->
+      <path d="M374,200 L422,200" stroke="#F47B20" stroke-width="1.7" fill="none" marker-end="url(#ao)"/>
+      <!-- Reasoning → Memory (read) -->
+      <path d="M622,140 L676,128" stroke="#FFB347" stroke-width="1.4" fill="none" marker-end="url(#agold)" class="anim"/>
+      <!-- Memory → Reasoning (context) -->
+      <path d="M676,148 L622,158" stroke="#FFB347" stroke-width="1.4" fill="none" marker-end="url(#agold)" class="anim"/>
+      <!-- Execution → Memory (remember() write-back) — NEW arrow -->
+      <path d="M766,228 L766,212" stroke="#4DFFA0" stroke-width="1.4" fill="none" marker-end="url(#ag)" stroke-dasharray="5 3"/>
+      <!-- Reasoning → LLM -->
+      <path d="M622,175 L914,182" stroke="#F47B20" stroke-width="1.7" fill="none" marker-end="url(#ao)"/>
+      <!-- LLM → Reasoning (stream) -->
+      <path d="M914,166 L622,162" stroke="#F47B20" stroke-width="1.3" fill="none" marker-end="url(#ao)" stroke-dasharray="5 3"/>
+      <!-- Reasoning → Execution -->
+      <path d="M622,270 L676,270" stroke="#4DFFA0" stroke-width="1.4" fill="none" marker-end="url(#ag)"/>
+      <!-- Execution → Reasoning (tool_result) -->
+      <path d="M676,290 L622,290" stroke="#4DFFA0" stroke-width="1.4" fill="none" marker-end="url(#ag)" stroke-dasharray="5 3"/>
+      <!-- Summarization → summaryModel -->
+      <path d="M622,210 Q840,210 928,310" stroke="#FFB347" stroke-width="1.3" fill="none" marker-end="url(#agold)" class="anim"/>
+      <!-- summaryModel → Memory write-back -->
+      <path d="M932,328 Q870,280 860,218" stroke="#FFB347" stroke-width="1.3" fill="none" marker-end="url(#agold)" stroke-dasharray="4 3"/>
+      <!-- Heartbeat self-loop -->
+      <path d="M275,174 Q355,140 355,200 Q355,222 374,200" stroke="#4DFFA0" stroke-width="1.3" fill="none" marker-end="url(#ag)" class="anim"/>
+      <!-- Cron trigger -->
+      <path d="M275,152 Q410,118 422,152" stroke="#C084FC" stroke-width="1.3" fill="none" marker-end="url(#ap)" class="anim"/>
+      <!-- Context guard check -->
+      <path d="M523,104 Q594,56 626,90 Q634,118 622,126" stroke="#FFE566" stroke-width="1.1" fill="none" marker-end="url(#ay)" stroke-dasharray="3 3"/>
+
+      <!-- Labels -->
+      <text x="136" y="194" font-family="JetBrains Mono" font-size="8.5" fill="#F47B20" opacity="0.7">inbound</text>
+      <text x="694" y="120" font-family="JetBrains Mono" font-size="8" fill="#FFB347" opacity="0.7">read ctx</text>
+      <text x="694" y="158" font-family="JetBrains Mono" font-size="8" fill="#FFB347" opacity="0.7">write sum</text>
+      <text x="694" y="264" font-family="JetBrains Mono" font-size="8" fill="#4DFFA0" opacity="0.7">tool calls</text>
+      <text x="694" y="294" font-family="JetBrains Mono" font-size="8" fill="#4DFFA0" opacity="0.7">tool_result</text>
+      <text x="776" y="222" font-family="JetBrains Mono" font-size="7.5" fill="#4DFFA0" opacity="0.7">remember()</text>
+      <text x="730" y="172" font-family="JetBrains Mono" font-size="8" fill="#F47B20" opacity="0.7">LLM call</text>
+      <text x="730" y="158" font-family="JetBrains Mono" font-size="8" fill="#F47B20" opacity="0.7">stream ←</text>
+    </svg>
+  </div>
+</div>
+
+<!-- ══════════ GATEWAY DEEP DIVE ══════════ -->
+<div id="dd-gateway" class="view dd-view">
+  <div class="dd-topbar">
+    <button class="back-btn" onclick="showView('overview')">← Overview</button>
+    <div class="dd-breadcrumb">OpenClaw / <span>Gateway Layer</span></div>
+    <span class="stability-topbar stable">STABLE</span>
+  </div>
+  <div class="dd-content">
+    <div class="dd-hero">
+      <div class="dd-tag">Layer 01 — Orchestration & I/O</div>
+      <h2 class="c-blue">Gateway</h2>
+      <p>The Gateway is a long-running Node.js daemon — the single process that owns all I/O, scheduling, and message normalization. It exposes a WebSocket control plane at <code>ws://127.0.0.1:18789</code> that all clients (CLI, WebChat, macOS app, iOS/Android nodes) connect to. The Pi agent is the embedded reasoning engine, connected via RPC. Every inbound message — from any channel (WhatsApp, Telegram, Slack, Discord, etc.) — is normalized into a common Envelope and routed to the appropriate agent. The Gateway uses Node.js's event-driven architecture with libuv for async I/O. SIGTERM triggers graceful drain: in-flight turns complete before exit. The Gateway watches <code>~/.openclaw/openclaw.json</code> and applies most changes automatically without restart — exceptions are <code>gateway.reload</code> and <code>gateway.remote</code>, which require a restart.</p>
+    </div>
+
+    <div class="s-title">Internal Architecture</div>
+    <div class="diagram-box">
+      <svg viewBox="0 0 1080 430" xmlns="http://www.w3.org/2000/svg">
+        <defs>
+          <marker id="gao" markerWidth="7" markerHeight="7" refX="5" refY="3" orient="auto"><path d="M0,0 L0,6 L7,3z" fill="#F47B20"/></marker>
+          <marker id="gab" markerWidth="7" markerHeight="7" refX="5" refY="3" orient="auto"><path d="M0,0 L0,6 L7,3z" fill="#3BBFFF"/></marker>
+          <marker id="gag" markerWidth="7" markerHeight="7" refX="5" refY="3" orient="auto"><path d="M0,0 L0,6 L7,3z" fill="#4DFFA0"/></marker>
+          <marker id="gap" markerWidth="7" markerHeight="7" refX="5" refY="3" orient="auto"><path d="M0,0 L0,6 L7,3z" fill="#C084FC"/></marker>
+        </defs>
+        <rect x="8" y="8" width="1064" height="360" rx="12" fill="none" stroke="rgba(59,191,255,0.13)" stroke-width="1.5" stroke-dasharray="6 4"/>
+        <text x="22" y="28" font-family="JetBrains Mono" font-size="9" fill="rgba(59,191,255,0.35)" letter-spacing="2">NODE.JS PROCESS (daemon pid)</text>
+        <!-- inputs -->
+        <rect x="26" y="55" width="120" height="30" rx="6" fill="rgba(244,123,32,0.1)" stroke="rgba(244,123,32,0.35)" stroke-width="1"/>
+        <text x="86" y="74" text-anchor="middle" font-family="JetBrains Mono" font-size="9.5" fill="#F47B20">CLI / stdin</text>
+        <rect x="26" y="98" width="120" height="30" rx="6" fill="rgba(244,123,32,0.1)" stroke="rgba(244,123,32,0.35)" stroke-width="1"/>
+        <text x="86" y="117" text-anchor="middle" font-family="JetBrains Mono" font-size="9.5" fill="#F47B20">HTTP webhook</text>
+        <rect x="26" y="141" width="120" height="30" rx="6" fill="rgba(244,123,32,0.1)" stroke="rgba(244,123,32,0.35)" stroke-width="1"/>
+        <text x="86" y="160" text-anchor="middle" font-family="JetBrains Mono" font-size="9.5" fill="#F47B20">Mobile / Web UI</text>
+        <rect x="26" y="184" width="120" height="30" rx="6" fill="rgba(192,132,252,0.1)" stroke="rgba(192,132,252,0.3)" stroke-width="1"/>
+        <text x="86" y="203" text-anchor="middle" font-family="JetBrains Mono" font-size="9.5" fill="#C084FC">Cron Timer</text>
+        <rect x="26" y="227" width="120" height="30" rx="6" fill="rgba(77,255,160,0.1)" stroke="rgba(77,255,160,0.3)" stroke-width="1"/>
+        <text x="86" y="246" text-anchor="middle" font-family="JetBrains Mono" font-size="9.5" fill="#4DFFA0">Heartbeat Timer</text>
+        <!-- Channel Adapter box -->
+        <rect x="206" y="50" width="158" height="230" rx="9" fill="#161616" stroke="rgba(59,191,255,0.38)" stroke-width="1.5"/>
+        <text x="285" y="75" text-anchor="middle" font-family="Syne" font-size="12" font-weight="700" fill="#3BBFFF">Channel Adapters</text>
+        <text x="285" y="93" text-anchor="middle" font-family="JetBrains Mono" font-size="8.5" fill="#555">normalize(raw) → Envelope</text>
+        <rect x="220" y="106" width="130" height="22" rx="4" fill="rgba(59,191,255,0.07)" stroke="rgba(59,191,255,0.15)" stroke-width="1"/>
+        <text x="285" y="121" text-anchor="middle" font-family="JetBrains Mono" font-size="8.5" fill="#3BBFFF">StdinAdapter</text>
+        <rect x="220" y="136" width="130" height="22" rx="4" fill="rgba(59,191,255,0.07)" stroke="rgba(59,191,255,0.15)" stroke-width="1"/>
+        <text x="285" y="151" text-anchor="middle" font-family="JetBrains Mono" font-size="8.5" fill="#3BBFFF">HttpAdapter</text>
+        <rect x="220" y="166" width="130" height="22" rx="4" fill="rgba(192,132,252,0.07)" stroke="rgba(192,132,252,0.2)" stroke-width="1"/>
+        <text x="285" y="181" text-anchor="middle" font-family="JetBrains Mono" font-size="8.5" fill="#C084FC">CronAdapter</text>
+        <rect x="220" y="196" width="130" height="22" rx="4" fill="rgba(77,255,160,0.07)" stroke="rgba(77,255,160,0.2)" stroke-width="1"/>
+        <text x="285" y="211" text-anchor="middle" font-family="JetBrains Mono" font-size="8.5" fill="#4DFFA0">HeartbeatAdapter</text>
+        <rect x="220" y="240" width="130" height="28" rx="4" fill="rgba(59,191,255,0.04)" stroke="rgba(59,191,255,0.1)" stroke-width="1" stroke-dasharray="3 3"/>
+        <text x="285" y="258" text-anchor="middle" font-family="JetBrains Mono" font-size="8.5" fill="rgba(59,191,255,0.5)">+ custom adapters</text>
+        <!-- Envelope -->
+        <rect x="424" y="100" width="168" height="170" rx="9" fill="#161616" stroke="rgba(244,123,32,0.45)" stroke-width="1.5"/>
+        <text x="508" y="126" text-anchor="middle" font-family="Syne" font-size="12" font-weight="700" fill="#F47B20">Envelope</text>
+        <text x="508" y="144" text-anchor="middle" font-family="JetBrains Mono" font-size="8.5" fill="#555">normalized message</text>
+        <text x="438" y="162" font-family="JetBrains Mono" font-size="8.5" fill="#888">sessionId: string</text>
+        <text x="438" y="177" font-family="JetBrains Mono" font-size="8.5" fill="#888">source: AdapterType</text>
+        <text x="438" y="192" font-family="JetBrains Mono" font-size="8.5" fill="#888">content: string</text>
+        <text x="438" y="207" font-family="JetBrains Mono" font-size="8.5" fill="#888">timestamp: number</text>
+        <text x="438" y="222" font-family="JetBrains Mono" font-size="8.5" fill="#888">cronMeta?: CronJob</text>
+        <text x="438" y="237" font-family="JetBrains Mono" font-size="8.5" fill="#888">isHeartbeat?: boolean</text>
+        <text x="438" y="252" font-family="JetBrains Mono" font-size="8.5" fill="#888">isolateSession?: boolean</text>
+        <!-- Session Router -->
+        <rect x="654" y="80" width="162" height="112" rx="9" fill="#161616" stroke="rgba(59,191,255,0.32)" stroke-width="1.5"/>
+        <text x="735" y="106" text-anchor="middle" font-family="Syne" font-size="12" font-weight="700" fill="#3BBFFF">Session Router</text>
+        <text x="735" y="124" text-anchor="middle" font-family="JetBrains Mono" font-size="8.5" fill="#666">resolve sessionId</text>
+        <text x="735" y="139" text-anchor="middle" font-family="JetBrains Mono" font-size="8.5" fill="#666">load / create JSONL</text>
+        <text x="735" y="154" text-anchor="middle" font-family="JetBrains Mono" font-size="8.5" fill="#666">acquire file lock</text>
+        <text x="735" y="169" text-anchor="middle" font-family="JetBrains Mono" font-size="8.5" fill="#666">→ agentTurn()</text>
+        <!-- Cron store -->
+        <rect x="654" y="216" width="162" height="90" rx="9" fill="#161616" stroke="rgba(192,132,252,0.35)" stroke-width="1.5"/>
+        <text x="735" y="241" text-anchor="middle" font-family="Syne" font-size="12" font-weight="700" fill="#C084FC">Cron Store</text>
+        <text x="735" y="259" text-anchor="middle" font-family="JetBrains Mono" font-size="8.5" fill="#666">~/.openclaw/cron/*.json</text>
+        <text x="735" y="275" text-anchor="middle" font-family="JetBrains Mono" font-size="8.5" fill="#666">persisted — survives restart</text>
+        <text x="735" y="291" text-anchor="middle" font-family="JetBrains Mono" font-size="8.5" fill="#666">cron expr → setInterval</text>
+        <!-- Out to Reasoning -->
+        <rect x="888" y="116" width="148" height="52" rx="7" fill="rgba(255,229,102,0.07)" stroke="rgba(255,229,102,0.3)" stroke-width="1.5"/>
+        <text x="962" y="140" text-anchor="middle" font-family="Syne" font-size="12" font-weight="700" fill="#FFE566">→ Reasoning</text>
+        <text x="962" y="157" text-anchor="middle" font-family="JetBrains Mono" font-size="8.5" fill="#666">agentTurn(env)</text>
+        <!-- Event loop bar -->
+        <rect x="26" y="328" width="1026" height="20" rx="4" fill="rgba(59,191,255,0.04)" stroke="rgba(59,191,255,0.12)" stroke-width="1" stroke-dasharray="5 4"/>
+        <text x="539" y="342" text-anchor="middle" font-family="JetBrains Mono" font-size="8.5" fill="rgba(59,191,255,0.45)">⟳ Node.js libuv event loop spans entire Gateway process — I/O callbacks, timers, and microtask queue</text>
+        <!-- Arrows -->
+        <path d="M148,70 L202,130" stroke="#F47B20" stroke-width="1.4" fill="none" marker-end="url(#gao)"/>
+        <path d="M148,113 L202,163" stroke="#F47B20" stroke-width="1.4" fill="none" marker-end="url(#gao)"/>
+        <path d="M148,156 L202,196" stroke="#F47B20" stroke-width="1.4" fill="none" marker-end="url(#gao)"/>
+        <path d="M148,199 L202,216" stroke="#C084FC" stroke-width="1.4" fill="none" marker-end="url(#gap)"/>
+        <path d="M148,242 L202,236" stroke="#4DFFA0" stroke-width="1.4" fill="none" marker-end="url(#gag)"/>
+        <path d="M366,170" stroke="none"/>
+        <path d="M366,185 L420,185" stroke="#F47B20" stroke-width="1.4" fill="none" marker-end="url(#gao)"/>
+        <path d="M594,170 L650,134" stroke="#3BBFFF" stroke-width="1.4" fill="none" marker-end="url(#gab)"/>
+        <path d="M650,266 L594,230" stroke="#C084FC" stroke-width="1.2" fill="none" marker-end="url(#gap)" stroke-dasharray="4 3"/>
+        <path d="M818,142 L884,142" stroke="#FFE566" stroke-width="1.6" fill="none" marker-end="url(#gao)"/>
+      </svg>
+    </div>
+
+    <div class="s-title">Daemon Lifecycle & Adapter Interface</div>
+    <div class="two-col">
+      <div class="info-card">
+        <h4 class="c-blue">Channel Adapter contract</h4>
+        <div class="code-block">
+<span class="k">interface</span> <span class="t">ChannelAdapter</span> {
+  <span class="c">// Bind to transport, start listening</span>
+  initialize(router: <span class="t">SessionRouter</span>): <span class="t">Promise</span>&lt;<span class="k">void</span>&gt;;
+
+  <span class="c">// Convert raw input to normalized Envelope</span>
+  normalize(raw: <span class="k">unknown</span>): <span class="t">Envelope</span>;
+
+  <span class="c">// SIGTERM handler — drain, release sockets</span>
+  shutdown(): <span class="t">Promise</span>&lt;<span class="k">void</span>&gt;;
+}
+
+<span class="c">// All adapters share the same Envelope schema</span>
+<span class="k">interface</span> <span class="t">Envelope</span> {
+  sessionId:       <span class="k">string</span>;
+  source:          <span class="s">'cli'|'http'|'cron'|'heartbeat'</span>;
+  content:         <span class="k">string</span>;
+  timestamp:       <span class="k">number</span>;
+  cronMeta?:       <span class="t">CronJob</span>;
+  isHeartbeat?:    <span class="k">boolean</span>;
+  isolateSession?: <span class="k">boolean</span>; <span class="c">// fresh session for cron</span>
+}</div>
+      </div>
+      <div class="info-card">
+        <h4 class="c-blue">Cron & Heartbeat internals</h4>
+        <div class="code-block">
+<span class="c">// Cron jobs loaded at daemon start from disk</span>
+<span class="k">const</span> jobs = <span class="k">await</span> loadCronJobs(<span class="s">'~/.openclaw/cron/'</span>);
+jobs.forEach(job =&gt; {
+  <span class="c">// setInterval from parsed cron expression</span>
+  scheduleJob(job.expr, () =&gt; {
+    router.dispatch({
+      sessionId: job.isolate
+        ? generateSessionId()  <span class="c">// fresh context</span>
+        : job.targetSession,   <span class="c">// or main session</span>
+      source: <span class="s">'cron'</span>,
+      content: job.prompt,
+      cronMeta: job
+    });
+  });
+});
+
+<span class="c">// Heartbeat is just a single setInterval</span>
+setInterval(() =&gt; router.dispatch({
+  sessionId: cfg.mainSession,
+  source: <span class="s">'heartbeat'</span>,
+  isHeartbeat: <span class="k">true</span>,
+  content: readFile(<span class="s">'HEARTBEAT.md'</span>)
+}), cfg.heartbeatInterval ?? <span class="o">1800000</span>); <span class="c">// 30min</span></div>
+      </div>
+    </div>
+
+    <div class="s-title">Failure Modes</div>
+    <div class="three-col">
+      <div class="failure-card">
+        <h4>Daemon crash / restart</h4>
+        <ul>
+          <li>launchd/systemd auto-restarts — KeepAlive:true</li>
+          <li>In-flight turn is lost — JSONL not yet written</li>
+          <li>Cron jobs reload from disk cleanly</li>
+          <li>Mitigation: write JSONL incrementally per token chunk, not at end of turn</li>
+        </ul>
+      </div>
+      <div class="failure-card">
+        <h4>File lock contention</h4>
+        <ul>
+          <li>Heartbeat fires during user turn — both try to acquire .lock</li>
+          <li>Second waiter spins up to 5s then aborts with LockTimeoutError</li>
+          <li>Heartbeat silently dropped — acceptable; user turn wins</li>
+          <li>Long-running tool calls increase lock hold time</li>
+        </ul>
+      </div>
+      <div class="failure-card">
+        <h4>Adapter port conflict</h4>
+        <ul>
+          <li>HttpAdapter binds on restart if previous process didn't release socket</li>
+          <li>EADDRINUSE — daemon fails to start entirely</li>
+          <li>Mitigation: SO_REUSEPORT on the listen socket in recent Node versions</li>
+          <li>Health check endpoint at /healthz helps catch silent failures</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ══════════ REASONING DEEP DIVE ══════════ -->
+<div id="dd-reasoning" class="view dd-view">
+  <div class="dd-topbar">
+    <button class="back-btn" onclick="showView('overview')">← Overview</button>
+    <div class="dd-breadcrumb">OpenClaw / <span>Reasoning Layer</span></div>
+    <span class="stability-topbar stable">STABLE</span>
+  </div>
+  <div class="dd-content">
+    <div class="dd-hero">
+      <div class="dd-tag">Layer 02 — LLM Inference</div>
+      <h2 class="c-yellow">Reasoning</h2>
+      <p>The Reasoning layer assembles a Mega Prompt from all available context (soul, semantic memory hits, session history), runs the Context Window Guard, streams tokens from the LLM, extracts tool_call blocks mid-stream, and dispatches them to Execution. It is the only layer that talks to LLMs. The streaming design is architecturally important: tool calls can be extracted before the stream completes, enabling interleaved execution without waiting for the full response.</p>
+    </div>
+
+    <div class="s-title">Turn Execution Pipeline</div>
+    <div class="diagram-box">
+      <svg viewBox="0 0 1080 280" xmlns="http://www.w3.org/2000/svg">
+        <defs>
+          <marker id="rao" markerWidth="7" markerHeight="7" refX="5" refY="3" orient="auto"><path d="M0,0 L0,6 L7,3z" fill="#F47B20"/></marker>
+          <marker id="ray" markerWidth="7" markerHeight="7" refX="5" refY="3" orient="auto"><path d="M0,0 L0,6 L7,3z" fill="#FFE566"/></marker>
+          <marker id="ragold" markerWidth="7" markerHeight="7" refX="5" refY="3" orient="auto"><path d="M0,0 L0,6 L7,3z" fill="#FFB347"/></marker>
+          <marker id="rag2" markerWidth="7" markerHeight="7" refX="5" refY="3" orient="auto"><path d="M0,0 L0,6 L7,3z" fill="#4DFFA0"/></marker>
+        </defs>
+        <!-- Step boxes -->
+        <rect x="12" y="100" width="118" height="80" rx="7" fill="#161616" stroke="rgba(244,123,32,0.35)" stroke-width="1.3"/>
+        <text x="71" y="126" text-anchor="middle" font-family="Syne" font-size="10.5" font-weight="700" fill="#F47B20">Receive</text>
+        <text x="71" y="142" text-anchor="middle" font-family="Syne" font-size="10.5" font-weight="700" fill="#F47B20">Envelope</text>
+        <text x="71" y="162" text-anchor="middle" font-family="JetBrains Mono" font-size="8" fill="#666">from Gateway</text>
+
+        <rect x="172" y="80" width="130" height="120" rx="7" fill="#161616" stroke="rgba(255,229,102,0.5)" stroke-width="2"/>
+        <text x="237" y="108" text-anchor="middle" font-family="Syne" font-size="10.5" font-weight="700" fill="#FFE566">Context</text>
+        <text x="237" y="124" text-anchor="middle" font-family="Syne" font-size="10.5" font-weight="700" fill="#FFE566">Guard</text>
+        <text x="237" y="146" text-anchor="middle" font-family="JetBrains Mono" font-size="8" fill="#888">tokens &lt; floor?</text>
+        <text x="237" y="160" text-anchor="middle" font-family="JetBrains Mono" font-size="8" fill="#888">→ pass</text>
+        <text x="237" y="174" text-anchor="middle" font-family="JetBrains Mono" font-size="8" fill="#888">≥ floor → compact</text>
+        <rect x="186" y="228" width="102" height="28" rx="5" fill="rgba(255,179,71,0.1)" stroke="rgba(255,179,71,0.35)" stroke-width="1"/>
+        <text x="237" y="246" text-anchor="middle" font-family="JetBrains Mono" font-size="8.5" fill="#FFB347">summarize()</text>
+        <path d="M237,202 L237,224" stroke="#FFB347" stroke-width="1.3" fill="none" marker-end="url(#ragold)"/>
+        <text x="244" y="218" font-family="JetBrains Mono" font-size="7.5" fill="#FFB347" opacity="0.8">overflow</text>
+
+        <rect x="354" y="80" width="140" height="120" rx="7" fill="#161616" stroke="rgba(255,229,102,0.38)" stroke-width="1.3"/>
+        <text x="424" y="108" text-anchor="middle" font-family="Syne" font-size="10.5" font-weight="700" fill="#FFE566">Mega Prompt</text>
+        <text x="424" y="124" text-anchor="middle" font-family="JetBrains Mono" font-size="8" fill="#666">assemble()</text>
+        <text x="364" y="146" font-family="JetBrains Mono" font-size="7.5" fill="#888">① system (Soul)</text>
+        <text x="364" y="160" font-family="JetBrains Mono" font-size="7.5" fill="#888">② semantic mem hits</text>
+        <text x="364" y="174" font-family="JetBrains Mono" font-size="7.5" fill="#888">③ session history</text>
+        <text x="364" y="188" font-family="JetBrains Mono" font-size="7.5" fill="#888">④ user turn</text>
+
+        <rect x="546" y="80" width="130" height="120" rx="7" fill="#161616" stroke="rgba(244,123,32,0.38)" stroke-width="1.3"/>
+        <text x="611" y="108" text-anchor="middle" font-family="Syne" font-size="10.5" font-weight="700" fill="#F47B20">Model</text>
+        <text x="611" y="124" text-anchor="middle" font-family="Syne" font-size="10.5" font-weight="700" fill="#F47B20">Router</text>
+        <text x="611" y="146" text-anchor="middle" font-family="JetBrains Mono" font-size="8" fill="#888">primary model?</text>
+        <text x="611" y="160" text-anchor="middle" font-family="JetBrains Mono" font-size="8" fill="#888">fallback chain?</text>
+        <text x="611" y="174" text-anchor="middle" font-family="JetBrains Mono" font-size="8" fill="#888">vision/summary?</text>
+
+        <rect x="730" y="80" width="140" height="120" rx="7" fill="#161616" stroke="rgba(244,123,32,0.5)" stroke-width="2"/>
+        <text x="800" y="108" text-anchor="middle" font-family="Syne" font-size="10.5" font-weight="700" fill="#F47B20">Stream</text>
+        <text x="800" y="124" text-anchor="middle" font-family="Syne" font-size="10.5" font-weight="700" fill="#F47B20">Buffer</text>
+        <text x="800" y="146" text-anchor="middle" font-family="JetBrains Mono" font-size="8" fill="#888">SSE token stream</text>
+        <text x="800" y="160" text-anchor="middle" font-family="JetBrains Mono" font-size="8" fill="#888">extract tool_calls</text>
+        <text x="800" y="174" text-anchor="middle" font-family="JetBrains Mono" font-size="8" fill="#888">→ Execution</text>
+
+        <rect x="930" y="100" width="132" height="80" rx="7" fill="#161616" stroke="rgba(77,255,160,0.38)" stroke-width="1.3"/>
+        <text x="996" y="130" text-anchor="middle" font-family="Syne" font-size="10.5" font-weight="700" fill="#4DFFA0">Commit</text>
+        <text x="996" y="146" text-anchor="middle" font-family="Syne" font-size="10.5" font-weight="700" fill="#4DFFA0">to JSONL</text>
+        <text x="996" y="164" text-anchor="middle" font-family="JetBrains Mono" font-size="8" fill="#666">write session</text>
+
+        <!-- Arrows -->
+        <path d="M132,140 L168,140" stroke="#F47B20" stroke-width="1.6" fill="none" marker-end="url(#rao)"/>
+        <path d="M304,140 L350,140" stroke="#FFE566" stroke-width="1.6" fill="none" marker-end="url(#ray)"/>
+        <path d="M496,140 L542,140" stroke="#FFE566" stroke-width="1.6" fill="none" marker-end="url(#ray)"/>
+        <path d="M678,140 L726,140" stroke="#F47B20" stroke-width="1.6" fill="none" marker-end="url(#rao)"/>
+        <path d="M872,140 L926,140" stroke="#4DFFA0" stroke-width="1.6" fill="none" marker-end="url(#rag2)"/>
+      </svg>
+    </div>
+
+    <div class="s-title">Streaming Token Buffer Architecture</div>
+    <div class="diagram-box">
+      <svg viewBox="0 0 1060 220" xmlns="http://www.w3.org/2000/svg">
+        <defs>
+          <marker id="rso" markerWidth="7" markerHeight="7" refX="5" refY="3" orient="auto"><path d="M0,0 L0,6 L7,3z" fill="#F47B20"/></marker>
+          <marker id="rsg" markerWidth="7" markerHeight="7" refX="5" refY="3" orient="auto"><path d="M0,0 L0,6 L7,3z" fill="#4DFFA0"/></marker>
+          <marker id="rsy" markerWidth="7" markerHeight="7" refX="5" refY="3" orient="auto"><path d="M0,0 L0,6 L7,3z" fill="#FFE566"/></marker>
+          <marker id="rsb" markerWidth="7" markerHeight="7" refX="5" refY="3" orient="auto"><path d="M0,0 L0,6 L7,3z" fill="#3BBFFF"/></marker>
+        </defs>
+        <!-- LLM -->
+        <ellipse cx="80" cy="110" rx="64" ry="42" fill="rgba(244,123,32,0.07)" stroke="rgba(244,123,32,0.38)" stroke-width="1.3"/>
+        <text x="80" y="106" text-anchor="middle" font-family="Syne" font-size="11" font-weight="700" fill="#F47B20">LLM</text>
+        <text x="80" y="122" text-anchor="middle" font-family="JetBrains Mono" font-size="8" fill="#888">SSE stream</text>
+        <!-- Token stream -->
+        <rect x="194" y="80" width="260" height="60" rx="7" fill="#161616" stroke="rgba(244,123,32,0.35)" stroke-width="1.3"/>
+        <text x="204" y="104" font-family="JetBrains Mono" font-size="8.5" fill="#888">data: {"type":"text","delta":"The capital..."}</text>
+        <text x="204" y="120" font-family="JetBrains Mono" font-size="8.5" fill="#3BBFFF">data: {"type":"tool_use","id":"t1","name":"read_file"}</text>
+        <text x="204" y="136" font-family="JetBrains Mono" font-size="8.5" fill="#888">data: {"type":"text","delta":" — done."}</text>
+        <text x="204" y="154" font-family="JetBrains Mono" font-size="7.5" fill="#555">↑ tool_call detected mid-stream → dispatched immediately</text>
+
+        <!-- Stream buffer parser -->
+        <rect x="508" y="68" width="148" height="84" rx="7" fill="#161616" stroke="rgba(255,229,102,0.45)" stroke-width="1.5"/>
+        <text x="582" y="93" text-anchor="middle" font-family="Syne" font-size="11" font-weight="700" fill="#FFE566">Stream</text>
+        <text x="582" y="109" text-anchor="middle" font-family="Syne" font-size="11" font-weight="700" fill="#FFE566">Parser</text>
+        <text x="582" y="129" text-anchor="middle" font-family="JetBrains Mono" font-size="8" fill="#888">type == tool_use?</text>
+        <text x="582" y="143" text-anchor="middle" font-family="JetBrains Mono" font-size="8" fill="#888">→ fork to Execution</text>
+
+        <!-- Text buffer -->
+        <rect x="720" y="30" width="152" height="62" rx="7" fill="#161616" stroke="rgba(77,255,160,0.3)" stroke-width="1.3"/>
+        <text x="796" y="55" text-anchor="middle" font-family="Syne" font-size="11" font-weight="700" fill="#4DFFA0">Text Buffer</text>
+        <text x="796" y="72" text-anchor="middle" font-family="JetBrains Mono" font-size="8" fill="#888">accumulated response</text>
+        <text x="796" y="86" text-anchor="middle" font-family="JetBrains Mono" font-size="8" fill="#888">→ stream to user UI</text>
+
+        <!-- Tool dispatch -->
+        <rect x="720" y="128" width="152" height="62" rx="7" fill="#161616" stroke="rgba(244,114,182,0.35)" stroke-width="1.3"/>
+        <text x="796" y="153" text-anchor="middle" font-family="Syne" font-size="11" font-weight="700" fill="#F472B6">Tool Queue</text>
+        <text x="796" y="170" text-anchor="middle" font-family="JetBrains Mono" font-size="8" fill="#888">tool_call events</text>
+        <text x="796" y="184" text-anchor="middle" font-family="JetBrains Mono" font-size="8" fill="#888">→ Execution layer</text>
+
+        <!-- JSONL commit -->
+        <rect x="938" y="68" width="104" height="84" rx="7" fill="#161616" stroke="rgba(255,179,71,0.35)" stroke-width="1.3"/>
+        <text x="990" y="99" text-anchor="middle" font-family="Syne" font-size="10.5" font-weight="700" fill="#FFB347">JSONL</text>
+        <text x="990" y="115" text-anchor="middle" font-family="JetBrains Mono" font-size="8" fill="#888">stream ends</text>
+        <text x="990" y="129" text-anchor="middle" font-family="JetBrains Mono" font-size="8" fill="#888">→ append turn</text>
+        <text x="990" y="143" text-anchor="middle" font-family="JetBrains Mono" font-size="8" fill="#888">→ release lock</text>
+
+        <!-- Arrows -->
+        <path d="M146,110 L190,110" stroke="#F47B20" stroke-width="1.5" fill="none" marker-end="url(#rso)"/>
+        <path d="M456,110 L504,110" stroke="#F47B20" stroke-width="1.5" fill="none" marker-end="url(#rso)"/>
+        <path d="M658,94 L716,60" stroke="#4DFFA0" stroke-width="1.4" fill="none" marker-end="url(#rsg)"/>
+        <path d="M658,126 L716,150" stroke="#F472B6" stroke-width="1.4" fill="none" marker-end="url(#rso)"/>
+        <path d="M874,110 L934,110" stroke="#FFB347" stroke-width="1.4" fill="none" marker-end="url(#rso)"/>
+        <text x="160" y="106" font-family="JetBrains Mono" font-size="7.5" fill="#F47B20" opacity="0.7">SSE</text>
+        <text x="466" y="106" font-family="JetBrains Mono" font-size="7.5" fill="#F47B20" opacity="0.7">chunk</text>
+      </svg>
+    </div>
+
+    <div class="s-title">Context Guard & Summarization Code</div>
+    <div class="two-col">
+      <div class="info-card">
+        <h4 class="c-yellow">Context Guard + map-reduce</h4>
+        <div class="code-block">
+<span class="k">async function</span> <span class="n">agentTurn</span>(env: <span class="t">Envelope</span>) {
+  <span class="k">let</span> history = <span class="k">await</span> loadSession(env.sessionId);
+  <span class="k">const</span> headroom =
+    MODEL_CTX_WINDOW - countTokens(history);
+
+  <span class="k">if</span> (headroom &lt; cfg.reserveTokensFloor) {
+    <span class="k">await</span> runCompaction(env.sessionId, history);
+    history = <span class="k">await</span> loadSession(env.sessionId);
+  }
+  <span class="k">const</span> prompt = buildMegaPrompt(history, env);
+  <span class="k">return</span> streamLLM(prompt);
+}
+
+<span class="k">async function</span> <span class="n">runCompaction</span>(id, history) {
+  <span class="k">const</span> chunkSize =
+    MODEL_CTX_WINDOW * <span class="o">0.4</span>; <span class="c">// BASE_CHUNK_RATIO</span>
+  <span class="k">const</span> chunks = splitToChunks(history, chunkSize);
+  <span class="c">// MAP — each chunk → fresh one-shot LLM call</span>
+  <span class="k">const</span> summaries = <span class="k">await</span> Promise.all(
+    chunks.map(c =&gt; summarizeChunk(c))
+  );
+  <span class="c">// REDUCE — write back as summary turns</span>
+  <span class="k">await</span> writeCompactedSession(id, summaries);
+}
+
+<span class="k">async function</span> <span class="n">summarizeChunk</span>(chunk) {
+  <span class="c">// History as DATA not as conversational context</span>
+  <span class="k">return</span> callLLM({
+    model: cfg.summaryModel ?? cfg.primaryModel,
+    messages: [{
+      role: <span class="s">'user'</span>,
+      content: <span class="s">'Summarize:\n'</span> + turnToText(chunk)
+    }]
+  });
+}</div>
+      </div>
+      <div class="info-card">
+        <h4 class="c-yellow">History as context vs. history as data</h4>
+        <div class="code-block">
+<span class="c">// ── CONTEXT (main turn) ────────────────────</span>
+<span class="c">// Model is positioned as participant</span>
+<span class="c">// It "owns" prior assistant turns</span>
+{
+  model: <span class="s">"claude-opus-4-6"</span>,
+  system: <span class="s">"You are an agent..."</span>,
+  messages: [
+    { role: <span class="s">"user"</span>,      content: <span class="s">"..."</span> },
+    { role: <span class="s">"assistant"</span>, content: <span class="s">"..."</span> },
+    { role: <span class="s">"user"</span>,      content: <span class="s">"current turn"</span> }
+  ]
+}
+
+<span class="c">// ── DATA (summarization) ───────────────────</span>
+<span class="c">// Model is neutral processor, not participant</span>
+<span class="c">// No prior assistant turns, no system prompt</span>
+{
+  model: <span class="s">"claude-sonnet-4-6"</span>,
+  messages: [{
+    role: <span class="s">"user"</span>,
+    content: <span class="s">"Summarize:\n\nUser: ...\nAssistant: ..."</span>
+    <span class="c">// ↑ transcript is just text — no role identity</span>
+  }]
+}</div>
+        <p style="margin-top:10px">The structural difference is not cosmetic — the model's behavior changes based on whether it sees itself as a participant in the messages[] array or as an external reader of plain text.</p>
+      </div>
+    </div>
+
+    <div class="s-title">Failure Modes</div>
+    <div class="three-col">
+      <div class="failure-card">
+        <h4>Summarization call overflows too</h4>
+        <ul>
+          <li>If a single chunk is itself larger than the context window (e.g. one 200K-token turn), summarizeChunk() will itself hit a context error</li>
+          <li>Falls back to static "Summary unavailable" placeholder</li>
+          <li>Root cause: reactive compaction — fires too late</li>
+          <li>Fix: raise reserveTokensFloor to 40K or enable proactive compaction</li>
+        </ul>
+      </div>
+      <div class="failure-card">
+        <h4>Stream disconnects mid-response</h4>
+        <ul>
+          <li>SSE connection drops mid-token — partial assistant turn in buffer</li>
+          <li>Partial turn must NOT be committed to JSONL — incomplete assistant turns confuse the next LLM call</li>
+          <li>Mitigation: only write JSONL on stream_end event, never on partial chunks</li>
+          <li>User sees truncated response; retry required</li>
+        </ul>
+      </div>
+      <div class="failure-card">
+        <h4>Primary model unavailable</h4>
+        <ul>
+          <li>HTTP 529 (overloaded) or 503 from Anthropic API</li>
+          <li>Model Router walks fallback chain in order</li>
+          <li>If all fallbacks fail, turn is aborted with error appended to session</li>
+          <li>Heartbeat turns are silently dropped on all-model failure — cron jobs are retried on next fire</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ══════════ MEMORY DEEP DIVE ══════════ -->
+<div id="dd-memory" class="view dd-view">
+  <div class="dd-topbar">
+    <button class="back-btn" onclick="showView('overview')">← Overview</button>
+    <div class="dd-breadcrumb">OpenClaw / <span>Memory Layer</span></div>
+    <span class="stability-topbar stable">STABLE</span>
+  </div>
+  <div class="dd-content">
+    <div class="dd-hero">
+      <div class="dd-tag">Layer 03 — Persistence</div>
+      <h2 class="c-gold">Memory</h2>
+      <p>OpenClaw memory has two distinct storage shapes: session transcripts (JSONL under agents/&lt;agentId&gt;/sessions/) and workspace files (markdown .md files in the workspace directory). Workspace files are the human-readable, agent-writable knowledge base — AGENTS.md, SOUL.md, TOOLS.md, USER.md, IDENTITY.md, HEARTBEAT.md, and BOOTSTRAP.md are all auto-injected into every prompt as bootstrap context. MEMORY.md holds durable long-term notes and is also auto-injected. Daily session notes land in memory/YYYY-MM-DD.md — these are NOT auto-injected; they are on-demand via memory tools or semantic search. An optional vector index over all .md files enables semantic recall. There is no custom binary embedding store — OpenClaw uses external embeddings (OpenAI text-embedding-3-small or compatible) to index the markdown files.</p>
+    </div>
+
+    <div class="s-title">Actual Memory Architecture</div>
+    <div class="diagram-box">
+      <svg viewBox="0 0 1050 400" xmlns="http://www.w3.org/2000/svg">
+        <defs>
+          <marker id="magold" markerWidth="7" markerHeight="7" refX="5" refY="3" orient="auto"><path d="M0,0 L0,6 L7,3z" fill="#FFB347"/></marker>
+          <marker id="mag" markerWidth="7" markerHeight="7" refX="5" refY="3" orient="auto"><path d="M0,0 L0,6 L7,3z" fill="#4DFFA0"/></marker>
+          <marker id="mab" markerWidth="7" markerHeight="7" refX="5" refY="3" orient="auto"><path d="M0,0 L0,6 L7,3z" fill="#3BBFFF"/></marker>
+          <marker id="mar" markerWidth="7" markerHeight="7" refX="5" refY="3" orient="auto"><path d="M0,0 L0,6 L7,3z" fill="#FF6B6B"/></marker>
+        </defs>
+        <!-- Reasoning caller -->
+        <rect x="12" y="150" width="130" height="100" rx="7" fill="#161616" stroke="rgba(255,229,102,0.35)" stroke-width="1.3"/>
+        <text x="77" y="178" text-anchor="middle" font-family="Syne" font-size="11" font-weight="700" fill="#FFE566">Reasoning</text>
+        <text x="77" y="196" text-anchor="middle" font-family="JetBrains Mono" font-size="8" fill="#666">buildPrompt()</text>
+        <text x="77" y="211" text-anchor="middle" font-family="JetBrains Mono" font-size="8" fill="#666">agent writes memory</text>
+        <text x="77" y="228" text-anchor="middle" font-family="JetBrains Mono" font-size="8" fill="#666">on tool calls</text>
+
+        <!-- Session JSONL -->
+        <rect x="206" y="30" width="200" height="220" rx="9" fill="#161616" stroke="rgba(255,179,71,0.45)" stroke-width="1.5"/>
+        <text x="306" y="56" text-anchor="middle" font-family="Syne" font-size="12" font-weight="700" fill="#FFB347">Session Transcript</text>
+        <text x="306" y="72" text-anchor="middle" font-family="JetBrains Mono" font-size="8" fill="#666">agents/&lt;agentId&gt;/sessions/*.jsonl</text>
+        <rect x="218" y="84" width="176" height="20" rx="4" fill="#0D0D0D" stroke="rgba(255,179,71,0.12)" stroke-width="1"/>
+        <text x="226" y="98" font-family="JetBrains Mono" font-size="8" fill="#888">{"role":"user","content":"..."}</text>
+        <rect x="218" y="110" width="176" height="20" rx="4" fill="#0D0D0D" stroke="rgba(255,179,71,0.12)" stroke-width="1"/>
+        <text x="226" y="124" font-family="JetBrains Mono" font-size="8" fill="#888">{"role":"assistant","content":"..."}</text>
+        <rect x="218" y="136" width="176" height="20" rx="4" fill="rgba(255,179,71,0.1)" stroke="rgba(255,179,71,0.28)" stroke-width="1"/>
+        <text x="226" y="150" font-family="JetBrains Mono" font-size="8" fill="#FFB347">{"type":"summary","srcTurns":42}</text>
+        <text x="306" y="176" text-anchor="middle" font-family="JetBrains Mono" font-size="7.5" fill="#555">Compaction rewrites full file</text>
+        <text x="306" y="190" text-anchor="middle" font-family="JetBrains Mono" font-size="7.5" fill="#555">old turns → summary entries</text>
+        <rect x="218" y="202" width="176" height="36" rx="4" fill="rgba(255,107,107,0.04)" stroke="rgba(255,107,107,0.15)" stroke-width="1" stroke-dasharray="3 3"/>
+        <text x="226" y="218" font-family="JetBrains Mono" font-size="7.5" fill="rgba(255,107,107,0.6)">Eviction: compaction only</text>
+        <text x="226" y="232" font-family="JetBrains Mono" font-size="7.5" fill="#555">sessionRetention prunes old runs</text>
+
+        <!-- Workspace bootstrap files — auto-injected -->
+        <rect x="466" y="10" width="220" height="210" rx="9" fill="#161616" stroke="rgba(77,255,160,0.4)" stroke-width="1.5"/>
+        <text x="576" y="36" text-anchor="middle" font-family="Syne" font-size="12" font-weight="700" fill="#4DFFA0">Bootstrap Files</text>
+        <text x="576" y="52" text-anchor="middle" font-family="JetBrains Mono" font-size="8" fill="#666">workspace/ — auto-injected every prompt</text>
+        <rect x="478" y="64" width="196" height="18" rx="3" fill="rgba(77,255,160,0.07)" stroke="rgba(77,255,160,0.15)" stroke-width="1"/>
+        <text x="576" y="77" text-anchor="middle" font-family="JetBrains Mono" font-size="8.5" fill="#4DFFA0">AGENTS.md — agent instructions</text>
+        <rect x="478" y="88" width="196" height="18" rx="3" fill="rgba(77,255,160,0.07)" stroke="rgba(77,255,160,0.15)" stroke-width="1"/>
+        <text x="576" y="101" text-anchor="middle" font-family="JetBrains Mono" font-size="8.5" fill="#4DFFA0">SOUL.md — persona &amp; beliefs</text>
+        <rect x="478" y="112" width="196" height="18" rx="3" fill="rgba(77,255,160,0.07)" stroke="rgba(77,255,160,0.15)" stroke-width="1"/>
+        <text x="576" y="125" text-anchor="middle" font-family="JetBrains Mono" font-size="8.5" fill="#4DFFA0">TOOLS.md — tool reference</text>
+        <rect x="478" y="136" width="196" height="18" rx="3" fill="rgba(77,255,160,0.07)" stroke="rgba(77,255,160,0.15)" stroke-width="1"/>
+        <text x="576" y="149" text-anchor="middle" font-family="JetBrains Mono" font-size="8.5" fill="#4DFFA0">IDENTITY.md / USER.md</text>
+        <rect x="478" y="160" width="196" height="18" rx="3" fill="rgba(77,255,160,0.07)" stroke="rgba(77,255,160,0.15)" stroke-width="1"/>
+        <text x="576" y="173" text-anchor="middle" font-family="JetBrains Mono" font-size="8.5" fill="#4DFFA0">HEARTBEAT.md / BOOTSTRAP.md</text>
+        <rect x="478" y="184" width="196" height="18" rx="3" fill="rgba(255,179,71,0.1)" stroke="rgba(255,179,71,0.3)" stroke-width="1"/>
+        <text x="576" y="197" text-anchor="middle" font-family="JetBrains Mono" font-size="8.5" fill="#FFB347">MEMORY.md — long-term notes</text>
+        <text x="576" y="215" text-anchor="middle" font-family="JetBrains Mono" font-size="7.5" fill="#555">Each truncated at 20K chars · total cap 150K</text>
+
+        <!-- memory/YYYY-MM-DD.md — on-demand -->
+        <rect x="466" y="240" width="220" height="100" rx="9" fill="#161616" stroke="rgba(255,179,71,0.35)" stroke-width="1.5" stroke-dasharray="5 3"/>
+        <text x="576" y="265" text-anchor="middle" font-family="Syne" font-size="11" font-weight="700" fill="#FFB347">memory/*.md</text>
+        <text x="576" y="281" text-anchor="middle" font-family="JetBrains Mono" font-size="8" fill="#666">daily notes — NOT auto-injected</text>
+        <text x="474" y="300" font-family="JetBrains Mono" font-size="7.5" fill="#888">Agent writes YYYY-MM-DD.md during</text>
+        <text x="474" y="314" font-family="JetBrains Mono" font-size="7.5" fill="#888">memoryFlush (silent pre-compaction turn)</text>
+        <text x="474" y="330" font-family="JetBrains Mono" font-size="7.5" fill="#3BBFFF">Accessed on-demand via memory tools</text>
+
+        <!-- Vector index -->
+        <rect x="752" y="100" width="200" height="130" rx="9" fill="#161616" stroke="rgba(59,191,255,0.35)" stroke-width="1.5" stroke-dasharray="5 3"/>
+        <text x="852" y="126" text-anchor="middle" font-family="Syne" font-size="12" font-weight="700" fill="#3BBFFF">Vector Index</text>
+        <text x="852" y="142" text-anchor="middle" font-family="JetBrains Mono" font-size="8" fill="#666">optional — requires OpenAI key</text>
+        <text x="760" y="162" font-family="JetBrains Mono" font-size="7.5" fill="#888">Indexes MEMORY.md + memory/*.md</text>
+        <text x="760" y="177" font-family="JetBrains Mono" font-size="7.5" fill="#888">Embeddings: text-embedding-3-small</text>
+        <text x="760" y="192" font-family="JetBrains Mono" font-size="7.5" fill="#888">Semantic search → relevant chunks</text>
+        <text x="760" y="207" font-family="JetBrains Mono" font-size="7.5" fill="#888">injected into prompt context</text>
+        <text x="760" y="221" font-family="JetBrains Mono" font-size="7.5" fill="#555">Not built-in flat binary store</text>
+
+        <!-- Filesystem -->
+        <rect x="752" y="250" width="200" height="140" rx="7" fill="rgba(255,255,255,0.02)" stroke="rgba(255,255,255,0.05)" stroke-width="1" stroke-dasharray="4 3"/>
+        <text x="852" y="272" text-anchor="middle" font-family="JetBrains Mono" font-size="8" fill="rgba(255,255,255,0.2)" letter-spacing="2">FILESYSTEM</text>
+        <text x="760" y="292" font-family="JetBrains Mono" font-size="8.5" fill="#666">~/.openclaw/</text>
+        <text x="770" y="308" font-family="JetBrains Mono" font-size="8.5" fill="#666">├─ openclaw.json</text>
+        <text x="770" y="324" font-family="JetBrains Mono" font-size="8.5" fill="#666">├─ credentials/</text>
+        <text x="770" y="340" font-family="JetBrains Mono" font-size="8.5" fill="#FFB347">├─ agents/&lt;id&gt;/sessions/</text>
+        <text x="770" y="356" font-family="JetBrains Mono" font-size="8.5" fill="#4DFFA0">└─ workspace/</text>
+
+        <!-- Arrows -->
+        <path d="M144,186 L202,140" stroke="#FFB347" stroke-width="1.4" fill="none" marker-end="url(#magold)"/>
+        <path d="M202,200 L144,200" stroke="#FFB347" stroke-width="1.4" fill="none" marker-end="url(#magold)" stroke-dasharray="4 3"/>
+        <path d="M144,180 L462,120" stroke="#4DFFA0" stroke-width="1.3" fill="none" marker-end="url(#mag)" stroke-dasharray="4 3"/>
+        <path d="M688,120 L748,150" stroke="#3BBFFF" stroke-width="1.2" fill="none" marker-end="url(#mab)" stroke-dasharray="4 3"/>
+        <path d="M688,280 L748,280" stroke="#3BBFFF" stroke-width="1.2" fill="none" marker-end="url(#mab)" stroke-dasharray="4 3"/>
+        <text x="152" y="165" font-family="JetBrains Mono" font-size="7.5" fill="#FFB347" opacity="0.8">R/W session</text>
+        <text x="280" y="175" font-family="JetBrains Mono" font-size="7.5" fill="#4DFFA0" opacity="0.7">read bootstrap</text>
+        <text x="694" y="114" font-family="JetBrains Mono" font-size="7.5" fill="#3BBFFF" opacity="0.7">index</text>
+        <text x="694" y="278" font-family="JetBrains Mono" font-size="7.5" fill="#3BBFFF" opacity="0.7">semantic recall</text>
+      </svg>
+    </div>
+
+    <div class="s-title">memoryFlush — Pre-Compaction Silent Turn</div>
+    <div class="two-col">
+      <div class="info-card">
+        <h4 class="c-gold">What it is and why it exists</h4>
+        <p style="margin-bottom:10px">Before compaction erases old turns, OpenClaw runs a silent agent turn to remind the model to write durable notes to disk first. The agent writes to <code>memory/YYYY-MM-DD.md</code>. If nothing is worth storing, the model replies <code>NO_REPLY</code> and nothing is written. This is the mechanism that prevents important context from disappearing through compaction.</p>
+        <div class="code-block">
+<span class="c">// Triggers when: contextWindow - reserveTokensFloor</span>
+<span class="c">//    - softThresholdTokens tokens remain</span>
+<span class="c">// Example: 200K window, floor=20K, soft=4K</span>
+<span class="c">// → flush fires at 176K tokens used</span>
+
+agents: {
+  defaults: {
+    compaction: {
+      reserveTokensFloor: <span class="o">20000</span>,
+      memoryFlush: {
+        enabled: <span class="k">true</span>,
+        softThresholdTokens: <span class="o">4000</span>,
+        prompt: <span class="s">"Write any lasting notes to</span>
+<span class="s">          memory/YYYY-MM-DD.md;</span>
+<span class="s">          reply NO_REPLY if nothing to store."</span>,
+      },
+    },
+  },
+}</div>
+        <ul style="margin-top:10px">
+          <li>Silent by default — NO_REPLY suppresses delivery to user</li>
+          <li>Skipped if workspace is read-only (sandboxed with workspaceAccess: "ro" or "none")</li>
+          <li>Runs once per compaction cycle, tracked in sessions.json</li>
+          <li>Only for embedded Pi sessions — CLI backends skip it</li>
+        </ul>
+      </div>
+      <div class="info-card">
+        <h4 class="c-gold">memory/*.md vs MEMORY.md — what goes where</h4>
+        <ul>
+          <li><strong class="c-gold">MEMORY.md</strong> — durable long-term notes. Auto-injected into every prompt as a bootstrap file. Use for facts that should always be in context: user preferences, persistent project state, standing instructions</li>
+          <li><strong class="c-gold">memory/YYYY-MM-DD.md</strong> — daily session notes. NOT auto-injected. Retrieved on-demand via memory tools or semantic search. Use for session summaries, ephemeral decisions, context that's useful sometimes but shouldn't always consume token budget</li>
+          <li><strong class="c-red">Eviction</strong> — no TTL for MEMORY.md or memory/*.md. Files persist until the agent or user deletes them. Token budget is the only natural limit (bootstrap truncation at 20K chars/file, 150K total)</li>
+          <li><strong class="c-blue">Semantic recall</strong> — requires an OpenAI API key for embeddings. memory/*.md files are not auto-injected regardless — semantic search surfaces relevant chunks only</li>
+        </ul>
+      </div>
+    </div>
+
+    <div class="s-title">JSONL Format — Before & After Compaction</div>
+    <div class="two-col">
+      <div class="info-card">
+        <h4 class="c-gold">Session path — corrected</h4>
+        <div class="code-block">
+<span class="c">// Sessions live under agents/&lt;agentId&gt;/sessions/</span>
+<span class="c">// NOT ~/.openclaw/sessions/{id}.jsonl</span>
+~/.openclaw/agents/<span class="o">main</span>/sessions/<span class="o">*.jsonl</span>
+~/.openclaw/agents/<span class="o">work</span>/sessions/<span class="o">*.jsonl</span>
+
+<span class="c">// Session header — first line</span>
+{"type":<span class="s">"session"</span>,"id":<span class="s">"abc123"</span>,"cwd":<span class="s">"..."</span>,"ts":<span class="o">1700000000</span>}
+
+<span class="c">// Normal turns</span>
+{"role":<span class="s">"user"</span>,"content":<span class="s">"..."</span>,"ts":<span class="o">1700000001</span>}
+{"role":<span class="s">"assistant"</span>,"content":<span class="s">"..."</span>,"ts":<span class="o">1700000002</span>}
+
+<span class="c">// After compaction — full file rewrite</span>
+{"type":<span class="s">"branch_summary"</span>,"content":<span class="s">"..."</span>,"srcTurns":<span class="o">180</span>}
+{"role":<span class="s">"user"</span>,"content":<span class="s">"last few turns..."</span>}</div>
+      </div>
+      <div class="info-card">
+        <h4 class="c-gold">contextPruning — distinct from compaction</h4>
+        <p style="margin-bottom:10px">contextPruning is a separate mechanism that prunes old tool results from the <em>in-memory prompt</em> before sending to the LLM. It does NOT rewrite the JSONL transcript on disk — the session history stays intact.</p>
+        <div class="code-block">
+agents: {
+  defaults: {
+    contextPruning: {
+      mode: <span class="s">"cache-ttl"</span>, <span class="c">// off | cache-ttl</span>
+      ttl: <span class="s">"1h"</span>,
+      keepLastAssistants: <span class="o">3</span>,
+      softTrimRatio: <span class="o">0.3</span>,
+      hardClearRatio: <span class="o">0.5</span>,
+      minPrunableToolChars: <span class="o">50000</span>,
+    },
+  },
+}
+
+<span class="c">// Compaction = rewrite JSONL on disk</span>
+<span class="c">// contextPruning = trim prompt in RAM only</span>
+<span class="c">// Both work together: pruning reduces LLM</span>
+<span class="c">// cost per turn; compaction reduces disk size</span></div>
+      </div>
+    </div>
+
+    <div class="s-title">Failure Modes</div>
+    <div class="three-col">
+      <div class="failure-card">
+        <h4>memoryFlush fails to write</h4>
+        <ul>
+          <li>Sandboxed session with workspaceAccess: "ro" — flush silently skipped</li>
+          <li>LLM responds NO_REPLY even when there IS important context — model judgment, not a bug</li>
+          <li>Workspace directory deleted between sessions — write fails silently</li>
+          <li>Mitigation: verify workspace path on startup, check workspaceAccess matches intent</li>
+        </ul>
+      </div>
+      <div class="failure-card">
+        <h4>Bootstrap file too large</h4>
+        <ul>
+          <li>TOOLS.md can grow very large if many skills are installed — real example shows 54K chars truncated to 20K at injection</li>
+          <li>Total bootstrap cap is 150K chars — if all files are large, some will be fully truncated</li>
+          <li>Truncated files show TRUNCATED in /context output — user visible</li>
+          <li>Mitigation: keep SOUL.md and AGENTS.md lean; move infrequent content to memory/</li>
+        </ul>
+      </div>
+      <div class="failure-card">
+        <h4>Semantic recall missing OpenAI key</h4>
+        <ul>
+          <li>Semantic memory search requires a real OpenAI API key — OAuth/Codex login does NOT grant embeddings access</li>
+          <li>If missing, memory search falls back to text search or returns empty</li>
+          <li>memory/*.md files are never auto-injected regardless — no key, no recall</li>
+          <li>Mitigation: set OPENAI_API_KEY or models.providers.openai.apiKey in config</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+</div>
+
+
+<!-- ══════════ EXECUTION DEEP DIVE ══════════ -->
+<div id="dd-execution" class="view dd-view">
+  <div class="dd-topbar">
+    <button class="back-btn" onclick="showView('overview')">← Overview</button>
+    <div class="dd-breadcrumb">OpenClaw / <span>Execution Layer</span></div>
+    <span class="stability-topbar stable">STABLE</span>
+  </div>
+  <div class="dd-content">
+    <div class="dd-hero">
+      <div class="dd-tag">Layer 04 — Tool & Skill Runtime</div>
+      <h2 class="c-green">Execution</h2>
+      <p>The Execution layer is the agentic actuator. When the LLM returns a tool_call, Execution looks up the skill in the registry, validates arguments against the JSON Schema, runs the TypeScript function or shells out via MCP, and returns a tool_result into the next conversation turn. The key architectural insight is that the agent doesn't just make one tool call — it loops: tool → result → LLM → tool → result → LLM until the model emits a final text response with no tool calls. This agentic loop is unbounded by default; max_iterations is a configurable circuit breaker.</p>
+    </div>
+
+    <div class="s-title">Agentic Tool Execution Loop — Decision Tree</div>
+    <div class="diagram-box">
+      <svg viewBox="0 0 1060 400" xmlns="http://www.w3.org/2000/svg">
+        <defs>
+          <marker id="eao" markerWidth="7" markerHeight="7" refX="5" refY="3" orient="auto"><path d="M0,0 L0,6 L7,3z" fill="#F47B20"/></marker>
+          <marker id="eag" markerWidth="7" markerHeight="7" refX="5" refY="3" orient="auto"><path d="M0,0 L0,6 L7,3z" fill="#4DFFA0"/></marker>
+          <marker id="eay" markerWidth="7" markerHeight="7" refX="5" refY="3" orient="auto"><path d="M0,0 L0,6 L7,3z" fill="#FFE566"/></marker>
+          <marker id="ear" markerWidth="7" markerHeight="7" refX="5" refY="3" orient="auto"><path d="M0,0 L0,6 L7,3z" fill="#FF6B6B"/></marker>
+          <marker id="eapk" markerWidth="7" markerHeight="7" refX="5" refY="3" orient="auto"><path d="M0,0 L0,6 L7,3z" fill="#F472B6"/></marker>
+        </defs>
+
+        <!-- LLM Response block -->
+        <rect x="12" y="160" width="140" height="80" rx="7" fill="#161616" stroke="rgba(244,123,32,0.38)" stroke-width="1.3"/>
+        <text x="82" y="192" text-anchor="middle" font-family="Syne" font-size="11" font-weight="700" fill="#F47B20">LLM</text>
+        <text x="82" y="208" text-anchor="middle" font-family="Syne" font-size="11" font-weight="700" fill="#F47B20">Response</text>
+        <text x="82" y="228" text-anchor="middle" font-family="JetBrains Mono" font-size="7.5" fill="#666">iter: 0..N</text>
+
+        <!-- Decision diamond: tool calls? -->
+        <polygon points="236,200 310,160 384,200 310,240" fill="#161616" stroke="rgba(244,114,182,0.5)" stroke-width="1.8"/>
+        <text x="310" y="196" text-anchor="middle" font-family="JetBrains Mono" font-size="8.5" fill="#F472B6">tool</text>
+        <text x="310" y="210" text-anchor="middle" font-family="JetBrains Mono" font-size="8.5" fill="#F472B6">calls?</text>
+
+        <!-- YES path: Skill Registry -->
+        <rect x="412" y="90" width="148" height="120" rx="7" fill="#161616" stroke="rgba(77,255,160,0.45)" stroke-width="1.7"/>
+        <text x="486" y="118" text-anchor="middle" font-family="Syne" font-size="11" font-weight="700" fill="#4DFFA0">Skill</text>
+        <text x="486" y="134" text-anchor="middle" font-family="Syne" font-size="11" font-weight="700" fill="#4DFFA0">Registry</text>
+        <text x="486" y="154" text-anchor="middle" font-family="JetBrains Mono" font-size="8" fill="#888">allowlist check</text>
+        <text x="486" y="168" text-anchor="middle" font-family="JetBrains Mono" font-size="8" fill="#888">args validate</text>
+        <text x="486" y="182" text-anchor="middle" font-family="JetBrains Mono" font-size="8" fill="#888">→ execute</text>
+
+        <!-- Skill not allowed -->
+        <rect x="412" y="238" width="148" height="56" rx="7" fill="rgba(255,107,107,0.07)" stroke="rgba(255,107,107,0.3)" stroke-width="1.3"/>
+        <text x="486" y="262" text-anchor="middle" font-family="Syne" font-size="10" font-weight="700" fill="#FF6B6B">PermissionError</text>
+        <text x="486" y="280" text-anchor="middle" font-family="JetBrains Mono" font-size="7.5" fill="#888">tool_result: error</text>
+
+        <!-- Execute: built-in or MCP -->
+        <rect x="618" y="50" width="148" height="72" rx="7" fill="rgba(77,255,160,0.07)" stroke="rgba(77,255,160,0.3)" stroke-width="1.3"/>
+        <text x="692" y="78" text-anchor="middle" font-family="JetBrains Mono" font-size="10" fill="#4DFFA0">Built-in Skill</text>
+        <text x="692" y="95" text-anchor="middle" font-family="JetBrains Mono" font-size="8" fill="#888">async TS fn in-process</text>
+        <text x="692" y="110" text-anchor="middle" font-family="JetBrains Mono" font-size="8" fill="#888">→ Promise&lt;SkillResult&gt;</text>
+
+        <rect x="618" y="150" width="148" height="72" rx="7" fill="rgba(192,132,252,0.07)" stroke="rgba(192,132,252,0.3)" stroke-width="1.3"/>
+        <text x="692" y="178" text-anchor="middle" font-family="JetBrains Mono" font-size="10" fill="#C084FC">MCP Server</text>
+        <text x="692" y="195" text-anchor="middle" font-family="JetBrains Mono" font-size="8" fill="#888">JSON-RPC stdio/HTTP</text>
+        <text x="692" y="210" text-anchor="middle" font-family="JetBrains Mono" font-size="8" fill="#888">sidecar process</text>
+
+        <!-- Result collector -->
+        <rect x="830" y="90" width="136" height="100" rx="7" fill="#161616" stroke="rgba(255,229,102,0.38)" stroke-width="1.3"/>
+        <text x="898" y="118" text-anchor="middle" font-family="Syne" font-size="11" font-weight="700" fill="#FFE566">tool_result</text>
+        <text x="898" y="136" text-anchor="middle" font-family="JetBrains Mono" font-size="8" fill="#666">appended to</text>
+        <text x="898" y="150" text-anchor="middle" font-family="JetBrains Mono" font-size="8" fill="#666">messages[]</text>
+        <text x="898" y="166" text-anchor="middle" font-family="JetBrains Mono" font-size="8" fill="#F472B6">→ next LLM turn</text>
+        <text x="898" y="180" text-anchor="middle" font-family="JetBrains Mono" font-size="8" fill="#F472B6">↺ loop</text>
+
+        <!-- NO path: Final response -->
+        <rect x="412" y="330" width="240" height="52" rx="7" fill="rgba(77,255,160,0.07)" stroke="rgba(77,255,160,0.3)" stroke-width="1.3"/>
+        <text x="532" y="354" text-anchor="middle" font-family="Syne" font-size="11" font-weight="700" fill="#4DFFA0">Final Text Response</text>
+        <text x="532" y="372" text-anchor="middle" font-family="JetBrains Mono" font-size="8" fill="#888">no tool calls → commit to JSONL</text>
+
+        <!-- max iterations exceeded -->
+        <rect x="830" y="300" width="136" height="52" rx="7" fill="rgba(255,107,107,0.07)" stroke="rgba(255,107,107,0.25)" stroke-width="1.3" stroke-dasharray="4 3"/>
+        <text x="898" y="323" text-anchor="middle" font-family="Syne" font-size="10" font-weight="700" fill="#FF6B6B">MaxIter</text>
+        <text x="898" y="340" text-anchor="middle" font-family="JetBrains Mono" font-size="7.5" fill="#888">circuit breaker</text>
+
+        <!-- Arrows -->
+        <path d="M154,200 L232,200" stroke="#F47B20" stroke-width="1.6" fill="none" marker-end="url(#eao)"/>
+        <!-- YES branch -->
+        <path d="M310,160 L310,150 Q310,140 320,140 L408,140" stroke="#F472B6" stroke-width="1.4" fill="none" marker-end="url(#eapk)"/>
+        <text x="314" y="148" font-family="JetBrains Mono" font-size="7.5" fill="#F472B6" opacity="0.8">YES</text>
+        <!-- NOT allowed -->
+        <path d="M310,240 L310,266 L408,266" stroke="#FF6B6B" stroke-width="1.3" fill="none" marker-end="url(#ear)"/>
+        <text x="315" y="263" font-family="JetBrains Mono" font-size="7.5" fill="#FF6B6B" opacity="0.8">blocked</text>
+        <!-- Registry → Built-in -->
+        <path d="M562,130 L614,88" stroke="#4DFFA0" stroke-width="1.4" fill="none" marker-end="url(#eag)"/>
+        <!-- Registry → MCP -->
+        <path d="M562,160 L614,183" stroke="#C084FC" stroke-width="1.4" fill="none" marker-end="url(#eao)"/>
+        <!-- Both → Result -->
+        <path d="M768,86 L826,118" stroke="#4DFFA0" stroke-width="1.4" fill="none" marker-end="url(#eag)"/>
+        <path d="M768,186 L826,162" stroke="#C084FC" stroke-width="1.4" fill="none" marker-end="url(#eao)"/>
+        <!-- Error → Result -->
+        <path d="M562,266 Q700,266 826,170" stroke="#FF6B6B" stroke-width="1.2" fill="none" marker-end="url(#eag)" stroke-dasharray="4 3"/>
+        <!-- Result loops back to LLM -->
+        <path d="M966,140 Q1040,140 1040,200 Q1040,280 154,200" stroke="#F472B6" stroke-width="1.4" fill="none" marker-end="url(#eao)" stroke-dasharray="5 3"/>
+        <!-- NO path -->
+        <path d="M384,200 L532,200 L532,326" stroke="#4DFFA0" stroke-width="1.4" fill="none" marker-end="url(#eag)"/>
+        <text x="444" y="196" font-family="JetBrains Mono" font-size="7.5" fill="#4DFFA0" opacity="0.8">NO</text>
+        <!-- Max iter -->
+        <path d="M966,190 L966,296" stroke="#FF6B6B" stroke-width="1.2" fill="none" marker-end="url(#ear)" stroke-dasharray="3 3"/>
+        <text x="970" y="248" font-family="JetBrains Mono" font-size="7.5" fill="#FF6B6B" opacity="0.7">iter &gt; max</text>
+      </svg>
+    </div>
+
+    <div class="s-title">Skill Interface & MCP Protocol</div>
+    <div class="two-col">
+      <div class="info-card">
+        <h4 class="c-green">Skill contract (TypeScript)</h4>
+        <div class="code-block">
+<span class="k">interface</span> <span class="t">Skill</span> {
+  name:        <span class="k">string</span>;
+  description: <span class="k">string</span>;
+  parameters:  <span class="t">JSONSchema</span>; <span class="c">// validated before call</span>
+  execute(args: <span class="k">unknown</span>, ctx: <span class="t">SkillContext</span>):
+    <span class="t">Promise</span>&lt;<span class="t">SkillResult</span>&gt;;
+}
+
+<span class="k">const</span> readFile: <span class="t">Skill</span> = {
+  name: <span class="s">'read_file'</span>,
+  parameters: {
+    type: <span class="s">'object'</span>,
+    properties: { path: { type: <span class="s">'string'</span> } },
+    required: [<span class="s">'path'</span>]
+  },
+  <span class="k">async</span> execute({ path }, ctx) {
+    <span class="c">// Resolve relative to workspace, not fs root</span>
+    <span class="k">const</span> abs = resolve(ctx.workspace, path);
+    <span class="c">// Sandbox check if enabled</span>
+    <span class="k">if</span> (ctx.sandboxed &amp;&amp; !abs.startsWith(ctx.workspace))
+      <span class="k">throw new</span> <span class="t">SandboxViolationError</span>(abs);
+    <span class="k">return</span> { content: <span class="k">await</span> fs.readFile(abs, <span class="s">'utf8'</span>) };
+  }
+};</div>
+      </div>
+      <div class="info-card">
+        <h4 class="c-purple">MCP JSON-RPC over stdio</h4>
+        <div class="code-block">
+<span class="c">// Gateway spawns MCP server as child process</span>
+<span class="k">const</span> proc = spawn(<span class="s">'python3'</span>, [<span class="s">'mcp_server.py'</span>]);
+
+<span class="c">// Tool call → JSON-RPC request on proc.stdin</span>
+proc.stdin.write(JSON.stringify({
+  jsonrpc: <span class="s">'2.0'</span>, id: callId,
+  method: <span class="s">'tools/call'</span>,
+  params: { name: <span class="s">'run_sql'</span>, arguments: { sql } }
+}) + <span class="s">'\n'</span>);
+
+<span class="c">// Result arrives on proc.stdout</span>
+proc.stdout.on(<span class="s">'data'</span>, chunk =&gt; {
+  <span class="k">const</span> res = JSON.parse(chunk);
+  <span class="c">// {jsonrpc:'2.0',id:callId,result:{content:'...'}}</span>
+  resolver(res.result);
+});
+
+<span class="c">// MCP server can be ANY language — Go, Python, Rust</span>
+<span class="c">// Contract: JSON-RPC 2.0 on stdio only</span></div>
+        <p style="margin-top:10px">Because the protocol is just newline-delimited JSON on stdio, MCP servers are language-agnostic. The trust boundary is the process spawn — any code running in the MCP server has the same OS privileges as the OpenClaw daemon.</p>
+      </div>
+    </div>
+
+    <div class="s-title">Tool Profiles, Groups & Allow/Deny</div>
+    <div class="two-col">
+      <div class="info-card">
+        <h4 class="c-green">tools.allow / tools.deny — per-agent</h4>
+        <p style="margin-bottom:10px">Tool access is controlled at the agent level via <code>tools.allow</code> and <code>tools.deny</code> lists. These work as a combined filter: allow lists what the agent may call, deny overrides to block even if in allow. Both accept tool names, group aliases, and <code>*</code> wildcards.</p>
+        <div class="code-block">
+<span class="c">// Per-agent tool access control</span>
+agents: {
+  defaults: {
+    tools: {
+      allow: [<span class="s">"*"</span>],          <span class="c">// allow all by default</span>
+      deny:  [<span class="s">"exec"</span>, <span class="s">"bash"</span>], <span class="c">// then deny dangerous ones</span>
+    }
+  },
+  list: [
+    {
+      id: <span class="s">"research"</span>,
+      tools: {
+        allow: [<span class="s">"web"</span>, <span class="s">"read"</span>, <span class="s">"memory"</span>], <span class="c">// profile aliases</span>
+        deny:  [<span class="s">"write"</span>, <span class="s">"exec"</span>],
+      }
+    },
+    {
+      id: <span class="s">"coder"</span>,
+      tools: {
+        allow: [<span class="s">"fs"</span>, <span class="s">"exec"</span>, <span class="s">"web"</span>],
+        elevated: [<span class="s">"exec"</span>], <span class="c">// requires explicit confirm in UI</span>
+      }
+    }
+  ]
+}
+
+<span class="c">// tools.byProvider: per-provider model tool access</span>
+tools: {
+  byProvider: {
+    <span class="s">"anthropic"</span>: { allow: [<span class="s">"*"</span>] },
+    <span class="s">"openai"</span>:    { deny:  [<span class="s">"exec"</span>] },
+  }
+}</div>
+      </div>
+      <div class="info-card">
+        <h4 class="c-green">Tool profiles & groups — named bundles</h4>
+        <p style="margin-bottom:10px">Profiles are named sets of tools that can be referenced by alias in allow/deny lists. Groups are a distinct but related concept — tool groups let you bundle tools for UI display and bulk enable/disable. Both are defined in the <code>tools</code> config block.</p>
+        <div class="code-block">
+<span class="c">// Tool profiles — reusable named allow/deny sets</span>
+tools: {
+  profiles: {
+    <span class="s">"readonly"</span>: {
+      allow: [<span class="s">"read"</span>, <span class="s">"web.search"</span>, <span class="s">"memory.recall"</span>],
+      deny:  [<span class="s">"write"</span>, <span class="s">"exec"</span>, <span class="s">"bash"</span>],
+    },
+    <span class="s">"devbox"</span>: {
+      allow: [<span class="s">"fs"</span>, <span class="s">"exec"</span>, <span class="s">"bash"</span>, <span class="s">"web"</span>],
+    },
+  },
+  <span class="c">// Tool groups — UI display + bulk toggle</span>
+  groups: {
+    <span class="s">"fs"</span>:     [<span class="s">"read"</span>, <span class="s">"write"</span>, <span class="s">"edit"</span>, <span class="s">"list"</span>],
+    <span class="s">"web"</span>:    [<span class="s">"web.search"</span>, <span class="s">"web.fetch"</span>, <span class="s">"browser"</span>],
+    <span class="s">"memory"</span>: [<span class="s">"memory.recall"</span>, <span class="s">"memory.store"</span>],
+    <span class="s">"comms"</span>:  [<span class="s">"email"</span>, <span class="s">"calendar"</span>, <span class="s">"contacts"</span>],
+  },
+  <span class="c">// tools.elevated — tools requiring user confirmation</span>
+  elevated: [<span class="s">"exec"</span>, <span class="s">"bash"</span>, <span class="s">"send_email"</span>],
+}
+
+<span class="c">// Agent references profile by name:</span>
+agents: { list: [{ id: <span class="s">"safe"</span>, tools: { profile: <span class="s">"readonly"</span> }}]}</div>
+      </div>
+    </div>
+
+    <div class="s-title">Failure Modes</div>
+    <div class="three-col">
+      <div class="failure-card">
+        <h4>Infinite agentic loop</h4>
+        <ul>
+          <li>Model keeps calling tools without ever producing a final text response</li>
+          <li>Common with poorly prompted agents or circular tool dependencies</li>
+          <li>Circuit breaker: max_iterations (default: 20) aborts the loop</li>
+          <li>Partial results appended to session with error turn noting iteration limit hit</li>
+        </ul>
+      </div>
+      <div class="failure-card">
+        <h4>MCP server crash</h4>
+        <ul>
+          <li>Child process exits unexpectedly — stdin write throws EPIPE</li>
+          <li>Tool call returns error result: "MCP server unavailable"</li>
+          <li>The LLM sees the error as a tool_result and decides whether to retry or abandon</li>
+          <li>Gateway can be configured to restart the MCP process on crash</li>
+        </ul>
+      </div>
+      <div class="failure-card">
+        <h4>Schema validation failure</h4>
+        <ul>
+          <li>LLM occasionally hallucinates invalid arguments — wrong type, missing required field</li>
+          <li>JSON Schema validation rejects call before execution — no partial side effects</li>
+          <li>Error returned as tool_result: LLM usually self-corrects on next iteration</li>
+          <li>If validation fails 3+ times for same tool, circuit breaker disables skill for the turn</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ══════════ SECURITY DEEP DIVE ══════════ -->
+<div id="dd-security" class="view dd-view">
+  <div class="dd-topbar">
+    <button class="back-btn" onclick="showView('overview')">← Overview</button>
+    <div class="dd-breadcrumb">OpenClaw / <span>Security & Trust</span></div>
+    <span class="stability-topbar beta">BETA</span>
+  </div>
+  <div class="dd-content">
+    <div class="dd-hero">
+      <div class="dd-tag">Cross-Cutting Concern — Threat Model</div>
+      <h2 class="c-red">Security & Trust</h2>
+      <p>OpenClaw's security posture is shaped by one uncomfortable truth: the LLM is not a trusted executor. It is a probabilistic text predictor that has no concept of intent, and it is therefore vulnerable to prompt injection — malicious instructions embedded in any text the agent reads. The threat model below covers the four primary attack surfaces, the trust boundaries between layers, and the mitigations available. Being a local-first agent, the blast radius of a successful attack is the host OS user account.</p>
+    </div>
+
+    <div class="s-title">Threat Model — Attack Surface Map</div>
+    <div class="diagram-box">
+      <svg viewBox="0 0 1060 380" xmlns="http://www.w3.org/2000/svg">
+        <defs>
+          <marker id="sao" markerWidth="7" markerHeight="7" refX="5" refY="3" orient="auto"><path d="M0,0 L0,6 L7,3z" fill="#F47B20"/></marker>
+          <marker id="sar" markerWidth="7" markerHeight="7" refX="5" refY="3" orient="auto"><path d="M0,0 L0,6 L7,3z" fill="#FF6B6B"/></marker>
+          <marker id="sag" markerWidth="7" markerHeight="7" refX="5" refY="3" orient="auto"><path d="M0,0 L0,6 L7,3z" fill="#4DFFA0"/></marker>
+        </defs>
+
+        <!-- Attacker -->
+        <rect x="12" y="160" width="100" height="60" rx="7" fill="rgba(255,107,107,0.1)" stroke="rgba(255,107,107,0.4)" stroke-width="1.5"/>
+        <text x="62" y="186" text-anchor="middle" font-family="Syne" font-size="11" font-weight="700" fill="#FF6B6B">Attacker</text>
+        <text x="62" y="202" text-anchor="middle" font-family="JetBrains Mono" font-size="8" fill="#888">external</text>
+
+        <!-- Attack vector 1: prompt injection via web -->
+        <rect x="178" y="50" width="192" height="100" rx="8" fill="#161616" stroke="rgba(255,107,107,0.35)" stroke-width="1.3"/>
+        <text x="274" y="76" text-anchor="middle" font-family="Syne" font-size="11" font-weight="700" fill="#FF6B6B">① Prompt Injection</text>
+        <text x="274" y="93" text-anchor="middle" font-family="JetBrains Mono" font-size="8" fill="#888">via read content</text>
+        <text x="185" y="112" font-family="JetBrains Mono" font-size="7.5" fill="#666">Malicious email/webpage/file</text>
+        <text x="185" y="126" font-family="JetBrains Mono" font-size="7.5" fill="#666">instructs agent to exec commands</text>
+        <text x="185" y="140" font-family="JetBrains Mono" font-size="7.5" fill="#FF6B6B">HIGH — no reliable LLM defense</text>
+
+        <!-- Attack vector 2: env var exposure -->
+        <rect x="178" y="170" width="192" height="100" rx="8" fill="#161616" stroke="rgba(255,107,107,0.3)" stroke-width="1.3"/>
+        <text x="274" y="196" text-anchor="middle" font-family="Syne" font-size="11" font-weight="700" fill="#FF6B6B">② Env Var Leakage</text>
+        <text x="274" y="213" text-anchor="middle" font-family="JetBrains Mono" font-size="8" fill="#888">via shell access</text>
+        <text x="185" y="232" font-family="JetBrains Mono" font-size="7.5" fill="#666">exec('env') exposes all API keys</text>
+        <text x="185" y="246" font-family="JetBrains Mono" font-size="7.5" fill="#666">including LLM provider keys</text>
+        <text x="185" y="260" font-family="JetBrains Mono" font-size="7.5" fill="#FF6B6B">HIGH if exec skill enabled</text>
+
+        <!-- Attack vector 3: path traversal -->
+        <rect x="178" y="290" width="192" height="80" rx="8" fill="#161616" stroke="rgba(255,229,102,0.3)" stroke-width="1.3"/>
+        <text x="274" y="316" text-anchor="middle" font-family="Syne" font-size="11" font-weight="700" fill="#FFE566">③ Path Traversal</text>
+        <text x="185" y="335" font-family="JetBrains Mono" font-size="7.5" fill="#666">read_file('../../.ssh/id_rsa')</text>
+        <text x="185" y="349" font-family="JetBrains Mono" font-size="7.5" fill="#666">sandbox=false by default</text>
+        <text x="185" y="363" font-family="JetBrains Mono" font-size="7.5" fill="#FFE566">MEDIUM — blocked by sandbox</text>
+
+        <!-- Trust boundary line -->
+        <line x1="426" y1="20" x2="426" y2="370" stroke="rgba(77,255,160,0.25)" stroke-width="1.5" stroke-dasharray="6 4"/>
+        <text x="430" y="36" font-family="JetBrains Mono" font-size="8.5" fill="rgba(77,255,160,0.5)" letter-spacing="1">TRUST BOUNDARY</text>
+
+        <!-- Mitigations -->
+        <rect x="452" y="40" width="210" height="90" rx="8" fill="rgba(77,255,160,0.05)" stroke="rgba(77,255,160,0.25)" stroke-width="1.3"/>
+        <text x="557" y="64" text-anchor="middle" font-family="Syne" font-size="11" font-weight="700" fill="#4DFFA0">Tool Allow/Deny</text>
+        <text x="459" y="82" font-family="JetBrains Mono" font-size="7.5" fill="#888">tools.allow / tools.deny per agent</text>
+        <text x="459" y="96" font-family="JetBrains Mono" font-size="7.5" fill="#888">Default allow: bash, process, read,</text>
+        <text x="459" y="110" font-family="JetBrains Mono" font-size="7.5" fill="#888">  write, edit, sessions_*</text>
+        <text x="459" y="124" font-family="JetBrains Mono" font-size="7.5" fill="#4DFFA0">Deny blocks tool even if injected</text>
+
+        <rect x="452" y="150" width="210" height="90" rx="8" fill="rgba(77,255,160,0.05)" stroke="rgba(77,255,160,0.25)" stroke-width="1.3"/>
+        <text x="557" y="174" text-anchor="middle" font-family="Syne" font-size="11" font-weight="700" fill="#4DFFA0">Docker Sandbox</text>
+        <text x="459" y="192" font-family="JetBrains Mono" font-size="7.5" fill="#888">sandbox.mode: "non-main" or "all"</text>
+        <text x="459" y="206" font-family="JetBrains Mono" font-size="7.5" fill="#888">readOnlyRoot + network:none</text>
+        <text x="459" y="220" font-family="JetBrains Mono" font-size="7.5" fill="#888">capDrop:ALL + seccomp + AppArmor</text>
+        <text x="459" y="234" font-family="JetBrains Mono" font-size="7.5" fill="#4DFFA0">OS-level isolation, not app-level</text>
+
+        <rect x="452" y="260" width="210" height="100" rx="8" fill="rgba(77,255,160,0.05)" stroke="rgba(77,255,160,0.25)" stroke-width="1.3"/>
+        <text x="557" y="284" text-anchor="middle" font-family="Syne" font-size="11" font-weight="700" fill="#FFE566">⚠ Default: No Sandbox</text>
+        <text x="459" y="302" font-family="JetBrains Mono" font-size="7.5" fill="#888">Main session: tools run on host</text>
+        <text x="459" y="316" font-family="JetBrains Mono" font-size="7.5" fill="#888">Workspace is NOT a hard boundary</text>
+        <text x="459" y="330" font-family="JetBrains Mono" font-size="7.5" fill="#888">Absolute paths reach host filesystem</text>
+        <text x="459" y="344" font-family="JetBrains Mono" font-size="7.5" fill="#888">unless Docker sandbox is enabled</text>
+        <text x="459" y="358" font-family="JetBrains Mono" font-size="7.5" fill="#FFE566">"By design for single-user setups"</text>
+
+        <!-- No reliable defense note -->
+        <rect x="720" y="40" width="320" height="300" rx="8" fill="rgba(255,107,107,0.04)" stroke="rgba(255,107,107,0.15)" stroke-width="1.3" stroke-dasharray="4 3"/>
+        <text x="880" y="68" text-anchor="middle" font-family="Syne" font-size="11" font-weight="700" fill="#FF6B6B">⚠  No Reliable Defense</text>
+        <text x="728" y="90" font-family="JetBrains Mono" font-size="8" fill="#888">Against Prompt Injection</text>
+        <text x="728" y="114" font-family="JetBrains Mono" font-size="8" fill="#777">LLMs have no intent recognition.</text>
+        <text x="728" y="130" font-family="JetBrains Mono" font-size="8" fill="#777">Instruction that looks like a task</text>
+        <text x="728" y="146" font-family="JetBrains Mono" font-size="8" fill="#777">will be followed regardless of source.</text>
+        <text x="728" y="176" font-family="JetBrains Mono" font-size="8" fill="#999">Practical defense:</text>
+        <text x="728" y="193" font-family="JetBrains Mono" font-size="8" fill="#888">1. Disable exec skill entirely</text>
+        <text x="728" y="209" font-family="JetBrains Mono" font-size="8" fill="#888">2. Enable sandbox mode</text>
+        <text x="728" y="225" font-family="JetBrains Mono" font-size="8" fill="#888">3. Allowlist only safe read-only skills</text>
+        <text x="728" y="241" font-family="JetBrains Mono" font-size="8" fill="#888">4. Run daemon as low-privilege user</text>
+        <text x="728" y="257" font-family="JetBrains Mono" font-size="8" fill="#888">5. Never pipe untrusted content directly</text>
+        <text x="728" y="280" font-family="JetBrains Mono" font-size="8" fill="#FF6B6B">Accept: in agentic use, some residual</text>
+        <text x="728" y="296" font-family="JetBrains Mono" font-size="8" fill="#FF6B6B">risk of prompt injection is unavoidable.</text>
+        <text x="728" y="312" font-family="JetBrains Mono" font-size="8" fill="#FF6B6B">The goal is to minimize blast radius,</text>
+        <text x="728" y="328" font-family="JetBrains Mono" font-size="8" fill="#FF6B6B">not eliminate the vector entirely.</text>
+
+        <!-- Arrows -->
+        <path d="M114,165 L174,100" stroke="#FF6B6B" stroke-width="1.3" fill="none" marker-end="url(#sar)"/>
+        <path d="M114,190 L174,215" stroke="#FF6B6B" stroke-width="1.3" fill="none" marker-end="url(#sar)"/>
+        <path d="M114,215 L174,330" stroke="#FFE566" stroke-width="1.3" fill="none" marker-end="url(#sao)"/>
+        <path d="M372,100 L448,100" stroke="#4DFFA0" stroke-width="1.3" fill="none" marker-end="url(#sag)"/>
+        <path d="M372,215 L448,198" stroke="#4DFFA0" stroke-width="1.3" fill="none" marker-end="url(#sag)"/>
+        <path d="M372,330 L448,305" stroke="#4DFFA0" stroke-width="1.3" fill="none" marker-end="url(#sag)"/>
+      </svg>
+    </div>
+
+    <div class="s-title">Docker Sandbox — Full Isolation Config</div>
+    <div class="two-col">
+      <div class="info-card">
+        <h4 class="c-red">sandbox config from official docs</h4>
+        <div class="code-block">
+agents: {
+  defaults: {
+    sandbox: {
+      mode: <span class="s">"non-main"</span>, <span class="c">// off | non-main | all</span>
+      scope: <span class="s">"session"</span>, <span class="c">// session | agent | shared</span>
+      workspaceAccess: <span class="s">"rw"</span>, <span class="c">// none | ro | rw</span>
+      workspaceRoot: <span class="s">"~/.openclaw/sandboxes"</span>,
+      docker: {
+        image: <span class="s">"openclaw-sandbox:bookworm-slim"</span>,
+        readOnlyRoot: <span class="k">true</span>,   <span class="c">// immutable container fs</span>
+        network: <span class="s">"none"</span>,       <span class="c">// no outbound network by default</span>
+        user: <span class="s">"1000:1000"</span>,     <span class="c">// never root</span>
+        capDrop: [<span class="s">"ALL"</span>],      <span class="c">// drop all Linux capabilities</span>
+        pidsLimit: <span class="o">256</span>,
+        memory: <span class="s">"1g"</span>,
+        memorySwap: <span class="s">"2g"</span>,
+        cpus: <span class="o">1</span>,
+        tmpfs: [<span class="s">"/tmp"</span>, <span class="s">"/var/tmp"</span>, <span class="s">"/run"</span>],
+        seccompProfile: <span class="s">"/path/to/seccomp.json"</span>,
+        apparmorProfile: <span class="s">"openclaw-sandbox"</span>,
+        ulimits: {
+          nofile: { soft: <span class="o">1024</span>, hard: <span class="o">2048</span> },
+          nproc: <span class="o">256</span>
+        }
+      },
+      <span class="c">// Sandboxed browser option</span>
+      browser: {
+        enabled: <span class="k">false</span>,
+        image: <span class="s">"openclaw-sandbox-browser:bookworm-slim"</span>,
+        network: <span class="s">"openclaw-sandbox-browser"</span>
+      }
+    }
+  }
+}</div>
+      </div>
+      <div class="info-card">
+        <h4 class="c-red">What sandbox mode actually means — from official docs</h4>
+        <ul>
+          <li><strong class="c-yellow">Default (mode: "off")</strong> — tools run directly on host for the main session. This is by design for single-user personal assistant use. Workspace is NOT a hard boundary — absolute paths can reach the host filesystem. Official docs: "workspace is cwd, not a hard sandbox"</li>
+          <li><strong class="c-green">mode: "non-main"</strong> — group/channel sessions run in per-session Docker containers. Main session (your direct DMs) still runs on host. Recommended for anyone exposing OpenClaw to other users on messaging platforms</li>
+          <li><strong class="c-green">mode: "all"</strong> — every session including main runs in Docker. Maximum isolation; also most friction</li>
+          <li><strong class="c-green">Docker isolation is OS-level</strong> — not a TypeScript path check. readOnlyRoot, capDrop:ALL, seccomp, and AppArmor together make container escape extremely difficult</li>
+          <li><strong class="c-red">Recommended hardened allowlist in sandbox</strong>: bash, process, read, write, edit, sessions_list/history/send/spawn. Strongly consider denying: browser, canvas, nodes, cron, discord, gateway. These are not enforced defaults — they reflect what the docs recommend as a sensible minimum for sandboxed sessions</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ══════════ OBSERVABILITY DEEP DIVE ══════════ -->
+<div id="dd-observability" class="view dd-view">
+  <div class="dd-topbar">
+    <button class="back-btn" onclick="showView('overview')">← Overview</button>
+    <div class="dd-breadcrumb">OpenClaw / <span>Observability</span></div>
+    <span class="stability-topbar beta">BETA</span>
+  </div>
+  <div class="dd-content">
+    <div class="dd-hero">
+      <div class="dd-tag">Cross-Cutting Concern — Telemetry</div>
+      <h2 class="c-teal">Observability</h2>
+      <p>OpenClaw's observability stack is built on two layers. The first is structured logging — the Gateway writes JSONL-format logs to <code>logging.file</code> (default <code>/tmp/openclaw/openclaw-YYYY-MM-DD.log</code>), covering all gateway activity with configurable redaction. The second is the <code>diagnostics-otel</code> plugin, which is the canonical path for metrics, traces, and OTLP export to any OpenTelemetry backend. Diagnostics are in-process structured events for model runs and message-flow telemetry — token usage, cost, context size, run duration, and message-flow counters/histograms. The fabricated <code>telemetry.jsonl</code> sink described in earlier versions of this document does not exist; the diagnostic log and OTLP export are the real mechanisms.</p>
+    </div>
+
+    <div class="s-title">Observability Architecture — Two Layers</div>
+    <div class="diagram-box">
+      <svg viewBox="0 0 1060 300" xmlns="http://www.w3.org/2000/svg">
+        <defs>
+          <marker id="oao" markerWidth="7" markerHeight="7" refX="5" refY="3" orient="auto"><path d="M0,0 L0,6 L7,3z" fill="#2DD4BF"/></marker>
+          <marker id="oag" markerWidth="7" markerHeight="7" refX="5" refY="3" orient="auto"><path d="M0,0 L0,6 L7,3z" fill="#4DFFA0"/></marker>
+        </defs>
+
+        <!-- Gateway process -->
+        <rect x="12" y="40" width="260" height="220" rx="9" fill="#161616" stroke="rgba(45,212,191,0.35)" stroke-width="1.5"/>
+        <text x="142" y="66" text-anchor="middle" font-family="Syne" font-size="12" font-weight="800" fill="#2DD4BF">Gateway Process</text>
+        <rect x="24" y="80" width="236" height="30" rx="5" fill="rgba(45,212,191,0.07)" stroke="rgba(45,212,191,0.2)" stroke-width="1"/>
+        <text x="142" y="99" text-anchor="middle" font-family="JetBrains Mono" font-size="8.5" fill="#2DD4BF">Agent turn events (in-process)</text>
+        <rect x="24" y="118" width="236" height="30" rx="5" fill="rgba(45,212,191,0.07)" stroke="rgba(45,212,191,0.2)" stroke-width="1"/>
+        <text x="142" y="137" text-anchor="middle" font-family="JetBrains Mono" font-size="8.5" fill="#2DD4BF">Token usage · cost · context size</text>
+        <rect x="24" y="156" width="236" height="30" rx="5" fill="rgba(45,212,191,0.07)" stroke="rgba(45,212,191,0.2)" stroke-width="1"/>
+        <text x="142" y="175" text-anchor="middle" font-family="JetBrains Mono" font-size="8.5" fill="#2DD4BF">Message-flow counters/histograms</text>
+        <rect x="24" y="194" width="236" height="54" rx="5" fill="rgba(45,212,191,0.04)" stroke="rgba(45,212,191,0.1)" stroke-width="1" stroke-dasharray="3 3"/>
+        <text x="142" y="214" text-anchor="middle" font-family="JetBrains Mono" font-size="8" fill="rgba(45,212,191,0.5)">Exporters only attach when</text>
+        <text x="142" y="230" text-anchor="middle" font-family="JetBrains Mono" font-size="8" fill="rgba(45,212,191,0.5)">diagnostics + plugin enabled</text>
+
+        <!-- Layer 1: Structured logging -->
+        <rect x="332" y="40" width="220" height="130" rx="9" fill="#161616" stroke="rgba(77,255,160,0.38)" stroke-width="1.5"/>
+        <text x="442" y="66" text-anchor="middle" font-family="Syne" font-size="12" font-weight="700" fill="#4DFFA0">Structured Logs</text>
+        <text x="442" y="82" text-anchor="middle" font-family="JetBrains Mono" font-size="8" fill="#666">logging.file — always on</text>
+        <text x="342" y="102" font-family="JetBrains Mono" font-size="8" fill="#888">/tmp/openclaw/openclaw-YYYY-MM-DD.log</text>
+        <text x="342" y="117" font-family="JetBrains Mono" font-size="8" fill="#888">JSONL format · one object per line</text>
+        <text x="342" y="132" font-family="JetBrains Mono" font-size="8" fill="#888">Redaction: none | keys | tools | all</text>
+        <text x="342" y="147" font-family="JetBrains Mono" font-size="8" fill="#888">logging.level: error|warn|info|debug</text>
+        <rect x="342" y="156" width="200" height="8" rx="3" fill="rgba(77,255,160,0.07)" stroke="rgba(77,255,160,0.15)" stroke-width="1"/>
+        <text x="442" y="163" text-anchor="middle" font-family="JetBrains Mono" font-size="7" fill="#4DFFA0">openclaw logs --follow</text>
+
+        <!-- Layer 2: diagnostics-otel plugin -->
+        <rect x="332" y="188" width="220" height="72" rx="9" fill="#161616" stroke="rgba(45,212,191,0.4)" stroke-width="1.7"/>
+        <text x="442" y="210" text-anchor="middle" font-family="Syne" font-size="11" font-weight="800" fill="#2DD4BF">diagnostics-otel plugin</text>
+        <text x="342" y="228" font-family="JetBrains Mono" font-size="8" fill="#888">Must be explicitly enabled (not default)</text>
+        <text x="342" y="243" font-family="JetBrains Mono" font-size="8" fill="#888">OTLP/HTTP protobuf · no gRPC</text>
+        <text x="342" y="252" font-family="JetBrains Mono" font-size="7" fill="#555">openclaw plugins enable diagnostics-otel</text>
+
+        <!-- OTLP export targets -->
+        <rect x="612" y="40" width="200" height="130" rx="9" fill="#161616" stroke="rgba(45,212,191,0.3)" stroke-width="1.3"/>
+        <text x="712" y="64" text-anchor="middle" font-family="Syne" font-size="11" font-weight="700" fill="#2DD4BF">OTLP Collector</text>
+        <text x="712" y="80" text-anchor="middle" font-family="JetBrains Mono" font-size="8" fill="#666">any OTel-compatible backend</text>
+        <text x="622" y="100" font-family="JetBrains Mono" font-size="8" fill="#888">Traces: model + message spans</text>
+        <text x="622" y="115" font-family="JetBrains Mono" font-size="8" fill="#888">Metrics: token usage, cost, latency</text>
+        <text x="622" y="130" font-family="JetBrains Mono" font-size="8" fill="#888">Logs: OTLP log export (opt-in)</text>
+        <text x="622" y="145" font-family="JetBrains Mono" font-size="8" fill="#888">sampleRate + flushIntervalMs config</text>
+        <text x="622" y="160" font-family="JetBrains Mono" font-size="7.5" fill="#555">Datadog · Grafana · Jaeger · Honeycomb</text>
+
+        <!-- Diagnostics flags -->
+        <rect x="612" y="188" width="200" height="72" rx="9" fill="#161616" stroke="rgba(255,179,71,0.3)" stroke-width="1.3" stroke-dasharray="4 3"/>
+        <text x="712" y="210" text-anchor="middle" font-family="Syne" font-size="11" font-weight="700" fill="#FFB347">Diagnostic Flags</text>
+        <text x="622" y="228" font-family="JetBrains Mono" font-size="8" fill="#888">Targeted per-subsystem debug logs</text>
+        <text x="622" y="243" font-family="JetBrains Mono" font-size="8" fill="#888">Opt-in · safe to leave on</text>
+        <text x="622" y="252" font-family="JetBrains Mono" font-size="7" fill="#555">Written to diagnostics log file (JSONL)</text>
+
+        <!-- Arrows -->
+        <path d="M274,100 L328,100" stroke="#4DFFA0" stroke-width="1.4" fill="none" marker-end="url(#oag)"/>
+        <path d="M274,160 L328,220" stroke="#2DD4BF" stroke-width="1.4" fill="none" marker-end="url(#oao)"/>
+        <path d="M554,100 L608,100" stroke="#2DD4BF" stroke-width="1.4" fill="none" marker-end="url(#oao)"/>
+        <path d="M554,224 L608,224" stroke="#FFB347" stroke-width="1.3" fill="none" marker-end="url(#oao)" stroke-dasharray="4 3"/>
+        <text x="282" y="96" font-family="JetBrains Mono" font-size="7.5" fill="#4DFFA0" opacity="0.8">always</text>
+        <text x="282" y="180" font-family="JetBrains Mono" font-size="7.5" fill="#2DD4BF" opacity="0.8">plugin</text>
+      </svg>
+    </div>
+
+    <div class="s-title">Configuration — from official docs</div>
+    <div class="two-col">
+      <div class="info-card">
+        <h4 class="c-teal">Logging config (always-on)</h4>
+        <div class="code-block">
+<span class="c">// Standard structured logging — no plugin needed</span>
+{
+  logging: {
+    level: <span class="s">"info"</span>,      <span class="c">// error|warn|info|debug</span>
+    file: <span class="s">"/tmp/openclaw/openclaw.log"</span>,
+    consoleLevel: <span class="s">"info"</span>,
+    consoleStyle: <span class="s">"pretty"</span>,  <span class="c">// pretty | json</span>
+    redactSensitive: <span class="s">"tools"</span>,  <span class="c">// none|keys|tools|all</span>
+  }
+}
+
+<span class="c">// Logs are JSONL — one object per line</span>
+<span class="c">// Follow live: openclaw logs --follow</span>
+<span class="c">// Diagnostic flags add targeted per-subsystem</span>
+<span class="c">// debug output without raising logging.level</span>
+<span class="c">// Flags emit into the same JSONL log file</span></div>
+      </div>
+      <div class="info-card">
+        <h4 class="c-teal">diagnostics-otel plugin config</h4>
+        <div class="code-block">
+<span class="c">// Must be explicitly enabled via plugin allowlist</span>
+{
+  plugins: {
+    allow: [<span class="s">"diagnostics-otel"</span>],
+    entries: {
+      <span class="s">"diagnostics-otel"</span>: { enabled: <span class="k">true</span> }
+    }
+  },
+  diagnostics: {
+    enabled: <span class="k">true</span>,
+    otel: {
+      enabled:         <span class="k">true</span>,
+      endpoint:        <span class="s">"http://otel-collector:4318"</span>,
+      protocol:        <span class="s">"http/protobuf"</span>, <span class="c">// grpc not supported</span>
+      serviceName:     <span class="s">"openclaw-gateway"</span>,
+      traces:          <span class="k">true</span>,
+      metrics:         <span class="k">true</span>,
+      logs:            <span class="k">true</span>,  <span class="c">// OTLP log export (opt-in)</span>
+      sampleRate:      <span class="o">0.2</span>,
+      flushIntervalMs: <span class="o">60000</span>,
+    }
+  }
+}
+<span class="c">// Env var shortcuts also work:</span>
+<span class="c">// OTEL_EXPORTER_OTLP_ENDPOINT</span>
+<span class="c">// OTEL_SERVICE_NAME</span></div>
+      </div>
+    </div>
+
+    <div class="s-title">What diagnostics actually cover</div>
+    <div class="four-col">
+      <div class="info-card">
+        <h4 class="c-teal">Token & cost</h4>
+        <ul>
+          <li>Token usage per model run — prompt + completion</li>
+          <li>Cost (where provider exposes it)</li>
+          <li>Context size over time per session</li>
+          <li>Run duration histograms</li>
+        </ul>
+      </div>
+      <div class="info-card">
+        <h4 class="c-teal">Message flow</h4>
+        <ul>
+          <li>Webhook inbound/outbound counters</li>
+          <li>Queue depth and wait times</li>
+          <li>Session state transitions</li>
+          <li>Channel-level delivery metrics</li>
+        </ul>
+      </div>
+      <div class="info-card">
+        <h4 class="c-teal">Traces</h4>
+        <ul>
+          <li>Spans for model usage</li>
+          <li>Spans for webhook/message processing</li>
+          <li>Propagate to Datadog, Grafana, Jaeger</li>
+          <li>traces toggle (default: on)</li>
+        </ul>
+      </div>
+      <div class="info-card">
+        <h4 class="c-teal">Not covered</h4>
+        <ul>
+          <li>No per-skill latency histogram built-in — use diagnostic flags for targeted debugging</li>
+          <li>No custom telemetry.jsonl sink — logs go to logging.file</li>
+          <li>OTLP logs respect logging.level — high-volume: use collector sampling</li>
+          <li>Console redaction does NOT apply to OTLP logs</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ══════════ CONFIGURATION DEEP DIVE ══════════ -->
+<div id="dd-configuration" class="view dd-view">
+  <div class="dd-topbar">
+    <button class="back-btn" onclick="showView('overview')">← Overview</button>
+    <div class="dd-breadcrumb">OpenClaw / <span>Configuration</span></div>
+    <span class="stability-topbar stable">STABLE</span>
+  </div>
+  <div class="dd-content">
+    <div class="dd-hero">
+      <div class="dd-tag">Cross-Cutting Concern — Schema & Overrides</div>
+      <h2 class="c-purple">Configuration</h2>
+      <p>OpenClaw uses a three-level override hierarchy: global defaults, per-agent overrides, and ephemeral session-level overrides. All three levels share the same schema — any key valid at the defaults level is valid at the agent level. Session-level overrides are never persisted and exist only for the lifetime of a single turn, useful for runtime adjustments like temporarily raising the context floor or swapping models without changing the config file. The full schema is TypeScript-typed and validated on daemon start.</p>
+    </div>
+
+    <div class="s-title">Override Hierarchy</div>
+    <div class="diagram-box">
+      <svg viewBox="0 0 1060 280" xmlns="http://www.w3.org/2000/svg">
+        <defs>
+          <marker id="cao" markerWidth="7" markerHeight="7" refX="5" refY="3" orient="auto"><path d="M0,0 L0,6 L7,3z" fill="#C084FC"/></marker>
+        </defs>
+
+        <!-- Level 1: Defaults -->
+        <rect x="12" y="20" width="320" height="240" rx="9" fill="#161616" stroke="rgba(192,132,252,0.4)" stroke-width="1.7"/>
+        <text x="172" y="46" text-anchor="middle" font-family="Syne" font-size="13" font-weight="800" fill="#C084FC">agents.defaults</text>
+        <text x="172" y="62" text-anchor="middle" font-family="JetBrains Mono" font-size="8.5" fill="#666">~/.openclaw/openclaw.json</text>
+        <text x="20" y="84" font-family="JetBrains Mono" font-size="8.5" fill="#888">model.primary: "claude-opus-4-6"</text>
+        <text x="20" y="100" font-family="JetBrains Mono" font-size="8.5" fill="#888">model.summaryModel: "claude-sonnet-4-6"</text>
+        <text x="20" y="116" font-family="JetBrains Mono" font-size="8.5" fill="#888">model.fallbacks: [...]</text>
+        <text x="20" y="134" font-family="JetBrains Mono" font-size="8.5" fill="#888">compaction.reserveTokensFloor: 20000</text>
+        <text x="20" y="150" font-family="JetBrains Mono" font-size="8.5" fill="#888">compaction.mode: "safeguard"</text>
+        <text x="20" y="168" font-family="JetBrains Mono" font-size="8.5" fill="#888">sandbox: false</text>
+        <text x="20" y="184" font-family="JetBrains Mono" font-size="8.5" fill="#888">allowedSkills: ["*"]</text>
+        <text x="20" y="200" font-family="JetBrains Mono" font-size="8.5" fill="#888">heartbeatInterval: 1800000</text>
+        <text x="20" y="216" font-family="JetBrains Mono" font-size="8.5" fill="#888">heartbeatModel: (uses primary)</text>
+        <text x="20" y="232" font-family="JetBrains Mono" font-size="8.5" fill="#888">maxIterations: 20</text>
+        <text x="20" y="248" font-family="JetBrains Mono" font-size="8.5" fill="#555">workspace: process.cwd()</text>
+
+        <!-- Arrow -->
+        <path d="M334,140 L374,140" stroke="#C084FC" stroke-width="1.5" fill="none" marker-end="url(#cao)"/>
+        <text x="340" y="133" font-family="JetBrains Mono" font-size="8" fill="#C084FC" opacity="0.7">merge</text>
+
+        <!-- Level 2: Agent overrides -->
+        <rect x="378" y="40" width="280" height="200" rx="9" fill="#161616" stroke="rgba(192,132,252,0.32)" stroke-width="1.5"/>
+        <text x="518" y="65" text-anchor="middle" font-family="Syne" font-size="13" font-weight="800" fill="#C084FC">agents.my-agent</text>
+        <text x="518" y="81" text-anchor="middle" font-family="JetBrains Mono" font-size="8.5" fill="#666">per-agent section</text>
+        <text x="386" y="102" font-family="JetBrains Mono" font-size="8.5" fill="#C084FC">model.primary: "gpt-4o"</text>
+        <text x="386" y="118" font-family="JetBrains Mono" font-size="8.5" fill="#888">↑ overrides default model</text>
+        <text x="386" y="138" font-family="JetBrains Mono" font-size="8.5" fill="#C084FC">sandbox: true</text>
+        <text x="386" y="154" font-family="JetBrains Mono" font-size="8.5" fill="#888">↑ tightens security</text>
+        <text x="386" y="174" font-family="JetBrains Mono" font-size="8.5" fill="#C084FC">allowedSkills: ["read_file"]</text>
+        <text x="386" y="190" font-family="JetBrains Mono" font-size="8.5" fill="#888">↑ restricts skills</text>
+        <text x="386" y="210" font-family="JetBrains Mono" font-size="8.5" fill="#555">all other keys: inherit defaults</text>
+        <text x="386" y="230" font-family="JetBrains Mono" font-size="8.5" fill="#555">deep merge — not replace</text>
+
+        <!-- Arrow -->
+        <path d="M660,140 L700,140" stroke="#C084FC" stroke-width="1.5" fill="none" marker-end="url(#cao)"/>
+        <text x="666" y="133" font-family="JetBrains Mono" font-size="8" fill="#C084FC" opacity="0.7">merge</text>
+
+        <!-- Level 3: Session overrides -->
+        <rect x="704" y="70" width="240" height="140" rx="9" fill="#161616" stroke="rgba(192,132,252,0.22)" stroke-width="1.3" stroke-dasharray="5 3"/>
+        <text x="824" y="95" text-anchor="middle" font-family="Syne" font-size="12" font-weight="700" fill="rgba(192,132,252,0.7)">Session Overrides</text>
+        <text x="824" y="112" text-anchor="middle" font-family="JetBrains Mono" font-size="8" fill="#555">ephemeral — not persisted</text>
+        <text x="712" y="134" font-family="JetBrains Mono" font-size="8" fill="#888">model.primary: "claude-haiku"</text>
+        <text x="712" y="150" font-family="JetBrains Mono" font-size="8" fill="#888">↑ swap model for one turn</text>
+        <text x="712" y="170" font-family="JetBrains Mono" font-size="8" fill="#888">compaction.reserveTokensFloor: 40000</text>
+        <text x="712" y="186" font-family="JetBrains Mono" font-size="8" fill="#888">↑ raise floor for long session</text>
+        <text x="712" y="204" font-family="JetBrains Mono" font-size="8" fill="#555">passed in Envelope.overrides</text>
+      </svg>
+    </div>
+
+    <div class="s-title">Full annotated openclaw.json schema — from official docs</div>
+    <div class="info-card" style="margin-bottom:36px">
+      <div class="code-block" style="max-height:500px;overflow-y:auto">
+<span class="c">// JSON5 — comments and trailing commas allowed
+// Source: docs.openclaw.ai/gateway/configuration-reference</span>
+
+{
+  <span class="c">// ── Identity ────────────────────────────────────────────────────</span>
+  identity: {
+    name: <span class="s">"Clawd"</span>,
+    emoji: <span class="s">"🦞"</span>,
+  },
+
+  <span class="c">// ── Single-agent shorthand (minimal config) ─────────────────────</span>
+  agent: {
+    <span class="c">// Provider/model string — NOT just model name</span>
+    model: <span class="s">"anthropic/claude-opus-4-6"</span>,
+    workspace: <span class="s">"~/.openclaw/workspace"</span>,
+  },
+
+  <span class="c">// ── Multi-agent (full form — used when agents.list is needed) ────</span>
+  agents: {
+    defaults: {
+      workspace: <span class="s">"~/.openclaw/workspace"</span>,
+      model: {
+        primary:   <span class="s">"anthropic/claude-opus-4-6"</span>,
+        fallbacks: [<span class="s">"openai/gpt-4.1"</span>, <span class="s">"anthropic/claude-sonnet-4-6"</span>],
+      },
+
+      <span class="c">// ── Compaction ─────────────────────────────────────────────</span>
+      compaction: {
+        mode: <span class="s">"safeguard"</span>, <span class="c">// default | safeguard</span>
+        reserveTokensFloor: <span class="o">20000</span>, <span class="c">// default floor: 20000</span>
+        memoryFlush: {
+          enabled: <span class="k">true</span>,
+          softThresholdTokens: <span class="o">4000</span>,
+          prompt: <span class="s">"Write any lasting notes to memory/YYYY-MM-DD.md; reply NO_REPLY if nothing to store."</span>,
+        },
+      },
+
+      <span class="c">// ── Context pruning (separate from compaction) ─────────────</span>
+      contextPruning: {
+        mode: <span class="s">"cache-ttl"</span>, <span class="c">// off | cache-ttl</span>
+        ttl: <span class="s">"1h"</span>,
+        keepLastAssistants: <span class="o">3</span>,
+        softTrimRatio: <span class="o">0.3</span>,
+        hardClearRatio: <span class="o">0.5</span>,
+      },
+
+      <span class="c">// ── Heartbeat ───────────────────────────────────────────────</span>
+      <span class="c">// Key is heartbeat.every, NOT heartbeatInterval!</span>
+      heartbeat: {
+        every: <span class="s">"30m"</span>,     <span class="c">// human-readable duration</span>
+        target: <span class="s">"last"</span>,  <span class="c">// last | whatsapp | telegram | none</span>
+      },
+
+      <span class="c">// ── Bootstrap file limits ───────────────────────────────────</span>
+      bootstrapMaxChars:      <span class="o">20000</span>,  <span class="c">// per-file truncation default</span>
+      bootstrapTotalMaxChars: <span class="o">150000</span>, <span class="c">// total injection cap</span>
+
+      <span class="c">// ── Docker Sandbox ──────────────────────────────────────────</span>
+      sandbox: {
+        mode: <span class="s">"non-main"</span>, <span class="c">// off | non-main | all</span>
+        scope: <span class="s">"session"</span>,
+        workspaceAccess: <span class="s">"rw"</span>,
+        docker: {
+          image: <span class="s">"openclaw-sandbox:bookworm-slim"</span>,
+          readOnlyRoot: <span class="k">true</span>,
+          network: <span class="s">"none"</span>,
+          user: <span class="s">"1000:1000"</span>,
+          capDrop: [<span class="s">"ALL"</span>],
+          pidsLimit: <span class="o">256</span>,
+          memory: <span class="s">"1g"</span>,
+        },
+      },
+    },
+
+    <span class="c">// Per-agent overrides — deep-merged over defaults</span>
+    list: [
+      { id: <span class="s">"main"</span>, default: <span class="k">true</span> },
+      {
+        id: <span class="s">"work"</span>,
+        workspace: <span class="s">"~/work-agent"</span>,
+        heartbeat: { every: <span class="s">"55m"</span> }, <span class="c">// per-agent override</span>
+      },
+    ],
+  },
+
+  <span class="c">// ── Cron ────────────────────────────────────────────────────────</span>
+  cron: {
+    enabled: <span class="k">true</span>,
+    maxConcurrentRuns: <span class="o">2</span>,
+    sessionRetention: <span class="s">"24h"</span>, <span class="c">// prune completed isolated sessions</span>
+  },
+
+  <span class="c">// ── Gateway ─────────────────────────────────────────────────────</span>
+  gateway: {
+    port: <span class="o">18789</span>,
+    bind: <span class="s">"loopback"</span>,  <span class="c">// WebSocket at ws://127.0.0.1:18789</span>
+    mode: <span class="s">"local"</span>,
+    auth: { mode: <span class="s">"token"</span> },
+  },
+}</div>
+    </div>
+
+    <div class="s-title">Merge Semantics & Config Validation</div>
+    <div class="two-col">
+      <div class="info-card">
+        <h4 class="c-purple">Deep merge — not replace</h4>
+        <p style="margin-bottom:10px">Agent-level overrides (agents.list[]) are deep-merged into agents.defaults. Specifying heartbeat.every at the agent level does not wipe out other heartbeat fields from defaults — it only replaces the key you explicitly set.</p>
+        <div class="code-block">
+<span class="c">// defaults.model.fallbacks = ['openai/gpt-4.1']</span>
+<span class="c">// agents.list[work].model = { primary: 'openai/gpt-4.1-mini' }</span>
+
+<span class="c">// effective.model = {</span>
+<span class="c">//   primary: 'openai/gpt-4.1-mini',   ← from agent</span>
+<span class="c">//   fallbacks: ['openai/gpt-4.1']      ← from defaults</span>
+<span class="c">// }</span>
+
+<span class="c">// CLI to verify resolved config:</span>
+openclaw config get agents.defaults.workspace
+openclaw config set agents.defaults.heartbeat.every <span class="s">"2h"</span>
+openclaw config unset tools.web.search.apiKey</div>
+      </div>
+      <div class="info-card">
+        <h4 class="c-purple">Validation on daemon start</h4>
+        <ul>
+          <li>Full JSON Schema validation of openclaw.json on every daemon start</li>
+          <li>Unknown keys produce warnings (not errors) — future compatibility</li>
+          <li>Invalid values (wrong type, out-of-range) are fatal — daemon refuses to start</li>
+          <li>Model strings are not validated against provider availability at startup — a typo in model.primary only fails at the first LLM call</li>
+          <li>Circular agent references (agent A's fallback is agent B which falls back to A) detected and rejected</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ══════════ MULTI-AGENT DEEP DIVE ══════════ -->
+<div id="dd-multiagent" class="view dd-view">
+  <div class="dd-topbar">
+    <button class="back-btn" onclick="showView('overview')">← Overview</button>
+    <div class="dd-breadcrumb">OpenClaw / <span>Multi-Agent</span></div>
+    <span class="stability-topbar experimental">EXPERIMENTAL</span>
+  </div>
+  <div class="dd-content">
+    <div class="dd-hero">
+      <div class="dd-tag">Layer 08 — Routing & Orchestration · EXPERIMENTAL</div>
+      <h2 class="c-pink">Multi-Agent</h2>
+      <p>OpenClaw has <strong>two distinct and independent multi-agent mechanisms</strong> that are commonly conflated. The first is <strong>Gateway Routing</strong> — a static dispatch table defined in config that routes inbound messages to different agents based on channel, sender ID, group, or mention pattern. This is pure configuration; no tool calls, no runtime spawning. The second is <strong>Session Spawning</strong> — a runtime capability where a running agent makes a tool call to create a new isolated sub-agent session and receive its output as a structured result. These are separate features: an installation can use routing without ever spawning, or spawn sub-agents from a single-agent setup. Understanding which mechanism you're configuring is the first decision when architecting a multi-agent setup.</p>
+    </div>
+
+    <!-- ── MECHANISM 1: Gateway Routing ── -->
+    <div class="s-title">Mechanism 1 — Gateway Routing (Static Config)</div>
+    <div class="diagram-box">
+      <svg viewBox="0 0 1060 280" xmlns="http://www.w3.org/2000/svg">
+        <defs>
+          <marker id="ra" markerWidth="7" markerHeight="7" refX="5" refY="3" orient="auto"><path d="M0,0 L0,6 L7,3z" fill="#F472B6"/></marker>
+          <marker id="rb" markerWidth="7" markerHeight="7" refX="5" refY="3" orient="auto"><path d="M0,0 L0,6 L7,3z" fill="#3BBFFF"/></marker>
+          <marker id="rg" markerWidth="7" markerHeight="7" refX="5" refY="3" orient="auto"><path d="M0,0 L0,6 L7,3z" fill="#4DFFA0"/></marker>
+          <marker id="ry" markerWidth="7" markerHeight="7" refX="5" refY="3" orient="auto"><path d="M0,0 L0,6 L7,3z" fill="#FFB347"/></marker>
+        </defs>
+
+        <!-- Inbound channels -->
+        <rect x="12" y="20" width="130" height="240" rx="8" fill="#161616" stroke="rgba(59,191,255,0.3)" stroke-width="1.3"/>
+        <text x="77" y="44" text-anchor="middle" font-family="Syne" font-size="10" font-weight="700" fill="#3BBFFF">Channels</text>
+        <rect x="22" y="56" width="110" height="22" rx="4" fill="rgba(59,191,255,0.07)" stroke="rgba(59,191,255,0.15)" stroke-width="1"/>
+        <text x="77" y="71" text-anchor="middle" font-family="JetBrains Mono" font-size="8" fill="#3BBFFF">WhatsApp DM</text>
+        <rect x="22" y="86" width="110" height="22" rx="4" fill="rgba(59,191,255,0.07)" stroke="rgba(59,191,255,0.15)" stroke-width="1"/>
+        <text x="77" y="101" text-anchor="middle" font-family="JetBrains Mono" font-size="8" fill="#3BBFFF">WhatsApp Group</text>
+        <rect x="22" y="116" width="110" height="22" rx="4" fill="rgba(59,191,255,0.07)" stroke="rgba(59,191,255,0.15)" stroke-width="1"/>
+        <text x="77" y="131" text-anchor="middle" font-family="JetBrains Mono" font-size="8" fill="#3BBFFF">Telegram DM</text>
+        <rect x="22" y="146" width="110" height="22" rx="4" fill="rgba(59,191,255,0.07)" stroke="rgba(59,191,255,0.15)" stroke-width="1"/>
+        <text x="77" y="161" text-anchor="middle" font-family="JetBrains Mono" font-size="8" fill="#3BBFFF">Slack channel</text>
+        <rect x="22" y="176" width="110" height="22" rx="4" fill="rgba(59,191,255,0.07)" stroke="rgba(59,191,255,0.15)" stroke-width="1"/>
+        <text x="77" y="191" text-anchor="middle" font-family="JetBrains Mono" font-size="8" fill="#3BBFFF">Discord server</text>
+        <rect x="22" y="206" width="110" height="22" rx="4" fill="rgba(59,191,255,0.07)" stroke="rgba(59,191,255,0.15)" stroke-width="1"/>
+        <text x="77" y="221" text-anchor="middle" font-family="JetBrains Mono" font-size="8" fill="#3BBFFF">CLI / WebChat</text>
+
+        <!-- Binding dispatcher -->
+        <rect x="202" y="80" width="180" height="120" rx="8" fill="#161616" stroke="rgba(244,114,182,0.45)" stroke-width="1.7"/>
+        <text x="292" y="106" text-anchor="middle" font-family="Syne" font-size="11" font-weight="800" fill="#F472B6">Binding Matcher</text>
+        <text x="292" y="124" text-anchor="middle" font-family="JetBrains Mono" font-size="8" fill="#666">agents.list[].bindings</text>
+        <text x="210" y="144" font-family="JetBrains Mono" font-size="7.5" fill="#888">channel · sender · group</text>
+        <text x="210" y="158" font-family="JetBrains Mono" font-size="7.5" fill="#888">mention · dmPolicy</text>
+        <text x="210" y="174" font-family="JetBrains Mono" font-size="7.5" fill="#555">First match wins · falls back</text>
+        <text x="210" y="186" font-family="JetBrains Mono" font-size="7.5" fill="#555">to agents.defaults</text>
+
+        <!-- Agents with separate state -->
+        <rect x="460" y="20" width="180" height="110" rx="8" fill="#161616" stroke="rgba(77,255,160,0.4)" stroke-width="1.5"/>
+        <text x="550" y="46" text-anchor="middle" font-family="Syne" font-size="11" font-weight="700" fill="#4DFFA0">Agent: "main"</text>
+        <text x="550" y="64" text-anchor="middle" font-family="JetBrains Mono" font-size="8" fill="#666">default · all DMs</text>
+        <text x="468" y="82" font-family="JetBrains Mono" font-size="7.5" fill="#888">workspace: ~/workspace</text>
+        <text x="468" y="97" font-family="JetBrains Mono" font-size="7.5" fill="#888">sessions: agents/main/sessions/</text>
+        <text x="468" y="112" font-family="JetBrains Mono" font-size="7.5" fill="#888">model: claude-opus-4-6</text>
+
+        <rect x="460" y="148" width="180" height="110" rx="8" fill="#161616" stroke="rgba(255,179,71,0.4)" stroke-width="1.5"/>
+        <text x="550" y="174" text-anchor="middle" font-family="Syne" font-size="11" font-weight="700" fill="#FFB347">Agent: "work"</text>
+        <text x="550" y="192" text-anchor="middle" font-family="JetBrains Mono" font-size="8" fill="#666">Slack + Discord groups</text>
+        <text x="468" y="210" font-family="JetBrains Mono" font-size="7.5" fill="#888">workspace: ~/work</text>
+        <text x="468" y="225" font-family="JetBrains Mono" font-size="7.5" fill="#888">sessions: agents/work/sessions/</text>
+        <text x="468" y="240" font-family="JetBrains Mono" font-size="7.5" fill="#888">model: gpt-4.1</text>
+
+        <!-- Separate state callout -->
+        <rect x="700" y="60" width="340" height="160" rx="8" fill="rgba(244,114,182,0.04)" stroke="rgba(244,114,182,0.15)" stroke-width="1.2" stroke-dasharray="4 3"/>
+        <text x="870" y="84" text-anchor="middle" font-family="Syne" font-size="11" font-weight="700" fill="#F472B6">Fully Separate State</text>
+        <text x="710" y="106" font-family="JetBrains Mono" font-size="8" fill="#888">Each agent has own workspace directory</text>
+        <text x="710" y="122" font-family="JetBrains Mono" font-size="8" fill="#888">SOUL.md, AGENTS.md, MEMORY.md isolated</text>
+        <text x="710" y="138" font-family="JetBrains Mono" font-size="8" fill="#888">Session JSONL in agents/&lt;id&gt;/sessions/</text>
+        <text x="710" y="154" font-family="JetBrains Mono" font-size="8" fill="#888">No cross-agent JSONL access</text>
+        <text x="710" y="170" font-family="JetBrains Mono" font-size="8" fill="#555">Bootstrap chars, heartbeat, model,</text>
+        <text x="710" y="185" font-family="JetBrains Mono" font-size="8" fill="#555">tools.allow, sandbox all independent</text>
+        <text x="710" y="202" font-family="JetBrains Mono" font-size="7.5" fill="#F472B6">Routing is STATIC config — no tool call</text>
+
+        <!-- Arrows -->
+        <path d="M144,67 L198,130" stroke="#3BBFFF" stroke-width="1.3" fill="none" marker-end="url(#rb)"/>
+        <path d="M144,97 L198,140" stroke="#3BBFFF" stroke-width="1.3" fill="none" marker-end="url(#rb)"/>
+        <path d="M144,127 L198,150" stroke="#3BBFFF" stroke-width="1.3" fill="none" marker-end="url(#rb)"/>
+        <path d="M144,157 L198,160" stroke="#3BBFFF" stroke-width="1.3" fill="none" marker-end="url(#rb)"/>
+        <path d="M144,187 L198,170" stroke="#3BBFFF" stroke-width="1.3" fill="none" marker-end="url(#rb)"/>
+        <path d="M144,217 L198,180" stroke="#3BBFFF" stroke-width="1.3" fill="none" marker-end="url(#rb)"/>
+        <path d="M384,110 L456,75" stroke="#4DFFA0" stroke-width="1.5" fill="none" marker-end="url(#rg)"/>
+        <path d="M384,170 L456,203" stroke="#FFB347" stroke-width="1.5" fill="none" marker-end="url(#ry)"/>
+        <text x="394" y="106" font-family="JetBrains Mono" font-size="7.5" fill="#4DFFA0" opacity="0.9">main</text>
+        <text x="394" y="184" font-family="JetBrains Mono" font-size="7.5" fill="#FFB347" opacity="0.9">work</text>
+      </svg>
+    </div>
+
+    <div class="two-col">
+      <div class="info-card">
+        <h4 class="c-pink">Binding match fields — from official docs</h4>
+        <div class="code-block">
+<span class="c">// agents.list — routing config, not runtime</span>
+agents: {
+  list: [
+    {
+      id: <span class="s">"main"</span>,
+      default: <span class="k">true</span>,   <span class="c">// catch-all fallback</span>
+    },
+    {
+      id: <span class="s">"work"</span>,
+      bindings: [
+        {
+          channel: <span class="s">"slack"</span>,
+          group:   <span class="s">"C1234567890"</span>,
+        },
+        {
+          channel: <span class="s">"discord"</span>,
+          sender:  <span class="s">"discord:987654321"</span>,
+        },
+        {
+          channel:  <span class="s">"telegram"</span>,
+          group:    <span class="s">"-1001234567890"</span>,
+          mention:  <span class="k">true</span>,  <span class="c">// only when @-mentioned</span>
+        },
+      ],
+      workspace: <span class="s">"~/work"</span>,
+      model: { primary: <span class="s">"openai/gpt-4.1"</span> },
+      tools: { allow: [<span class="s">"fs"</span>, <span class="s">"web"</span>], deny: [<span class="s">"exec"</span>] },
+    }
+  ]
+}</div>
+      </div>
+      <div class="info-card">
+        <h4 class="c-pink">What routing isolates vs. shares</h4>
+        <ul>
+          <li><strong class="c-green">Fully isolated per agent:</strong> workspace directory, SOUL.md / AGENTS.md / MEMORY.md, session JSONL files, model config, tools.allow/deny, sandbox mode, heartbeat config, bootstrap files</li>
+          <li><strong class="c-yellow">Shared at the gateway level:</strong> incoming message queue, daemon process, credentials storage, config file</li>
+          <li><strong class="c-red">Key distinction from spawning:</strong> routing is evaluated at message ingress before any LLM call. The agent assignment is determined statically by the binding table — the LLM has no involvement and cannot change it at runtime</li>
+          <li><strong class="c-red">First match wins:</strong> agents.list is evaluated in order; if no binding matches, the agent with <code>default: true</code> receives the message</li>
+        </ul>
+      </div>
+    </div>
+
+    <!-- ── MECHANISM 2: Session Spawning ── -->
+    <div class="s-title">Mechanism 2 — Session Spawning (Runtime Tool Call)</div>
+    <div class="diagram-box">
+      <svg viewBox="0 0 1060 340" xmlns="http://www.w3.org/2000/svg">
+        <defs>
+          <marker id="sa" markerWidth="7" markerHeight="7" refX="5" refY="3" orient="auto"><path d="M0,0 L0,6 L7,3z" fill="#F47B20"/></marker>
+          <marker id="spk" markerWidth="7" markerHeight="7" refX="5" refY="3" orient="auto"><path d="M0,0 L0,6 L7,3z" fill="#F472B6"/></marker>
+          <marker id="sg" markerWidth="7" markerHeight="7" refX="5" refY="3" orient="auto"><path d="M0,0 L0,6 L7,3z" fill="#4DFFA0"/></marker>
+          <marker id="sb" markerWidth="7" markerHeight="7" refX="5" refY="3" orient="auto"><path d="M0,0 L0,6 L7,3z" fill="#3BBFFF"/></marker>
+        </defs>
+
+        <!-- Parent Agent -->
+        <rect x="12" y="80" width="200" height="180" rx="9" fill="#161616" stroke="rgba(244,123,32,0.45)" stroke-width="1.7"/>
+        <text x="112" y="107" text-anchor="middle" font-family="Syne" font-size="13" font-weight="800" fill="#F47B20">Parent Agent</text>
+        <text x="112" y="123" text-anchor="middle" font-family="JetBrains Mono" font-size="8.5" fill="#666">session: main-001</text>
+        <rect x="24" y="134" width="176" height="26" rx="5" fill="rgba(244,123,32,0.08)" stroke="rgba(244,123,32,0.2)" stroke-width="1"/>
+        <text x="112" y="151" text-anchor="middle" font-family="JetBrains Mono" font-size="9" fill="#F47B20">LLM reasoning turn</text>
+        <rect x="24" y="170" width="176" height="26" rx="5" fill="rgba(244,114,182,0.08)" stroke="rgba(244,114,182,0.2)" stroke-width="1"/>
+        <text x="112" y="187" text-anchor="middle" font-family="JetBrains Mono" font-size="9" fill="#F472B6">tool_call: sessions_spawn()</text>
+        <rect x="24" y="206" width="176" height="26" rx="5" fill="rgba(77,255,160,0.07)" stroke="rgba(77,255,160,0.18)" stroke-width="1"/>
+        <text x="112" y="223" text-anchor="middle" font-family="JetBrains Mono" font-size="9" fill="#4DFFA0">tool_result: structured output</text>
+        <text x="112" y="250" text-anchor="middle" font-family="JetBrains Mono" font-size="8" fill="#666">Continues reasoning with result</text>
+
+        <!-- Gateway -->
+        <rect x="278" y="130" width="150" height="100" rx="8" fill="#161616" stroke="rgba(59,191,255,0.35)" stroke-width="1.3"/>
+        <text x="353" y="156" text-anchor="middle" font-family="Syne" font-size="11" font-weight="700" fill="#3BBFFF">Gateway</text>
+        <text x="353" y="174" text-anchor="middle" font-family="JetBrains Mono" font-size="8.5" fill="#888">spawn new sessionId</text>
+        <text x="353" y="190" text-anchor="middle" font-family="JetBrains Mono" font-size="8.5" fill="#888">resolve agent config</text>
+        <text x="353" y="206" text-anchor="middle" font-family="JetBrains Mono" font-size="8.5" fill="#888">isolate JSONL file</text>
+
+        <!-- Sub-Agent -->
+        <rect x="502" y="40" width="210" height="260" rx="9" fill="#161616" stroke="rgba(244,114,182,0.45)" stroke-width="1.7"/>
+        <text x="607" y="67" text-anchor="middle" font-family="Syne" font-size="13" font-weight="800" fill="#F472B6">Sub-Agent</text>
+        <text x="607" y="83" text-anchor="middle" font-family="JetBrains Mono" font-size="8.5" fill="#666">session: sub-abc123</text>
+        <rect x="514" y="96" width="186" height="26" rx="5" fill="rgba(244,114,182,0.08)" stroke="rgba(244,114,182,0.2)" stroke-width="1"/>
+        <text x="607" y="113" text-anchor="middle" font-family="JetBrains Mono" font-size="9" fill="#F472B6">own model (may differ)</text>
+        <rect x="514" y="132" width="186" height="26" rx="5" fill="rgba(192,132,252,0.08)" stroke="rgba(192,132,252,0.2)" stroke-width="1"/>
+        <text x="607" y="149" text-anchor="middle" font-family="JetBrains Mono" font-size="9" fill="#C084FC">own tools.allow/deny</text>
+        <rect x="514" y="168" width="186" height="26" rx="5" fill="rgba(255,179,71,0.08)" stroke="rgba(255,179,71,0.18)" stroke-width="1"/>
+        <text x="607" y="185" text-anchor="middle" font-family="JetBrains Mono" font-size="9" fill="#FFB347">own workspace + memory</text>
+        <rect x="514" y="204" width="186" height="26" rx="5" fill="rgba(77,255,160,0.07)" stroke="rgba(77,255,160,0.15)" stroke-width="1"/>
+        <text x="607" y="221" text-anchor="middle" font-family="JetBrains Mono" font-size="9" fill="#4DFFA0">full agentic tool loop</text>
+        <rect x="514" y="252" width="186" height="26" rx="5" fill="rgba(244,114,182,0.07)" stroke="rgba(244,114,182,0.2)" stroke-width="1" stroke-dasharray="3 3"/>
+        <text x="607" y="269" text-anchor="middle" font-family="JetBrains Mono" font-size="9" fill="#F472B6">can spawn sub-sub-agents</text>
+
+        <!-- Memory isolation -->
+        <rect x="778" y="80" width="264" height="180" rx="8" fill="rgba(255,107,107,0.04)" stroke="rgba(255,107,107,0.15)" stroke-width="1.2" stroke-dasharray="4 3"/>
+        <text x="910" y="106" text-anchor="middle" font-family="Syne" font-size="11" font-weight="700" fill="#FF6B6B">Session Isolation</text>
+        <text x="788" y="128" font-family="JetBrains Mono" font-size="8" fill="#888">agents/main/sessions/main-001.jsonl</text>
+        <text x="788" y="144" font-family="JetBrains Mono" font-size="8" fill="#F472B6">agents/main/sessions/sub-abc123.jsonl</text>
+        <text x="788" y="164" font-family="JetBrains Mono" font-size="8" fill="#888">Sub cannot read parent JSONL</text>
+        <text x="788" y="180" font-family="JetBrains Mono" font-size="8" fill="#888">Parent sees only tool_result output</text>
+        <text x="788" y="200" font-family="JetBrains Mono" font-size="8" fill="#555">Sub costs not auto-attributed to parent</text>
+        <text x="788" y="218" font-family="JetBrains Mono" font-size="8" fill="#555">Sub JSONL pruned via sessionRetention</text>
+        <text x="788" y="238" font-family="JetBrains Mono" font-size="7.5" fill="#F472B6">Spawning is RUNTIME — LLM decides</text>
+
+        <!-- Arrows -->
+        <path d="M214,183 L274,178" stroke="#F472B6" stroke-width="1.6" fill="none" marker-end="url(#spk)"/>
+        <path d="M274,210 L214,220" stroke="#4DFFA0" stroke-width="1.4" fill="none" marker-end="url(#sg)" stroke-dasharray="5 3"/>
+        <path d="M430,170 L498,170" stroke="#3BBFFF" stroke-width="1.5" fill="none" marker-end="url(#sb)"/>
+        <path d="M498,210 L430,200" stroke="#4DFFA0" stroke-width="1.4" fill="none" marker-end="url(#sg)" stroke-dasharray="5 3"/>
+        <text x="224" y="178" font-family="JetBrains Mono" font-size="7.5" fill="#F472B6" opacity="0.8">sessions_spawn</text>
+        <text x="228" y="230" font-family="JetBrains Mono" font-size="7.5" fill="#4DFFA0" opacity="0.8">result</text>
+        <text x="440" y="166" font-family="JetBrains Mono" font-size="7.5" fill="#3BBFFF" opacity="0.8">dispatch</text>
+        <text x="440" y="212" font-family="JetBrains Mono" font-size="7.5" fill="#4DFFA0" opacity="0.8">result</text>
+      </svg>
+    </div>
+
+    <div class="two-col">
+      <div class="info-card">
+        <h4 class="c-pink">sessions_spawn tool — runtime call</h4>
+        <div class="code-block">
+<span class="c">// Parent LLM emits this tool_call at runtime</span>
+<span class="c">// This is tools.subagents / tools.agentToAgent</span>
+{
+  type: <span class="s">"tool_use"</span>,
+  name: <span class="s">"sessions_spawn"</span>,
+  input: {
+    agentId:  <span class="s">"research-agent"</span>, <span class="c">// must exist in agents.list</span>
+    message:  <span class="s">"Research quantum computing trends"</span>,
+    context?: <span class="s">"User is writing a blog post"</span>,
+    modelOverride?: <span class="s">"openai/gpt-4.1-mini"</span>,
+    maxDepth?: <span class="o">2</span>  <span class="c">// advisory — not enforced</span>
+  }
+}
+
+<span class="c">// Result returned to parent as tool_result</span>
+{
+  type: <span class="s">"tool_result"</span>,
+  content: {
+    output:     <span class="s">"Quantum computing in 2025..."</span>,
+    sessionId:  <span class="s">"sub-abc123"</span>,
+    turnCount:  <span class="o">7</span>,
+    toolsCalled: [<span class="s">"web.search"</span>, <span class="s">"read"</span>],
+    tokensUsed:  <span class="o">12400</span>
+  }
+}
+
+<span class="c">// Enable in config:</span>
+tools: { subagents: { enabled: <span class="k">true</span> } }</div>
+      </div>
+      <div class="info-card">
+        <h4 class="c-pink">Known limitations of spawning</h4>
+        <ul>
+          <li>No enforced nesting depth — <code>maxDepth</code> is advisory only; a recursive spawn chain can run until the host runs out of memory or file descriptors</li>
+          <li>Sub-agent costs are not auto-attributed to the parent session in diagnostics — manual aggregation required</li>
+          <li>Sub-agent cannot read parent's JSONL or memory files — context must be passed explicitly in the <code>message</code> or <code>context</code> field</li>
+          <li>If sub-agent hits max_iterations, parent receives an error tool_result; the parent LLM decides whether to retry, use partial output, or abandon</li>
+          <li>Sub-agent JSONL accumulates under agents/&lt;id&gt;/sessions/ — pruned by <code>cron.sessionRetention</code> (default 24h)</li>
+        </ul>
+      </div>
+    </div>
+
+    <div class="s-title">Routing vs. Spawning — Side-by-Side</div>
+    <div class="info-card" style="margin-bottom:36px">
+      <table style="width:100%;border-collapse:collapse;font-family:JetBrains Mono,monospace;font-size:9px">
+        <tr style="border-bottom:1px solid rgba(255,255,255,0.08)">
+          <th style="padding:8px 12px;text-align:left;color:#F472B6;width:22%">Dimension</th>
+          <th style="padding:8px 12px;text-align:left;color:#4DFFA0;width:39%">Gateway Routing</th>
+          <th style="padding:8px 12px;text-align:left;color:#F472B6;width:39%">Session Spawning</th>
+        </tr>
+        <tr style="border-bottom:1px solid rgba(255,255,255,0.04)">
+          <td style="padding:7px 12px;color:#888">Trigger</td>
+          <td style="padding:7px 12px;color:#ccc">Message arrives at gateway — before any LLM call</td>
+          <td style="padding:7px 12px;color:#ccc">LLM decides to call sessions_spawn() during a turn</td>
+        </tr>
+        <tr style="border-bottom:1px solid rgba(255,255,255,0.04)">
+          <td style="padding:7px 12px;color:#888">Defined in</td>
+          <td style="padding:7px 12px;color:#ccc">agents.list[].bindings in openclaw.json (static config)</td>
+          <td style="padding:7px 12px;color:#ccc">tools.subagents config + LLM tool call at runtime</td>
+        </tr>
+        <tr style="border-bottom:1px solid rgba(255,255,255,0.04)">
+          <td style="padding:7px 12px;color:#888">LLM involved?</td>
+          <td style="padding:7px 12px;color:#4DFFA0">No — routing is pure config evaluation</td>
+          <td style="padding:7px 12px;color:#F472B6">Yes — LLM decides when and which agent to spawn</td>
+        </tr>
+        <tr style="border-bottom:1px solid rgba(255,255,255,0.04)">
+          <td style="padding:7px 12px;color:#888">Use case</td>
+          <td style="padding:7px 12px;color:#ccc">Route Slack groups to "work" agent, Telegram DMs to "personal"</td>
+          <td style="padding:7px 12px;color:#ccc">Delegate research subtask to a cheaper specialist agent</td>
+        </tr>
+        <tr style="border-bottom:1px solid rgba(255,255,255,0.04)">
+          <td style="padding:7px 12px;color:#888">Workspace/memory</td>
+          <td style="padding:7px 12px;color:#ccc">Separate per agent, persists across sessions</td>
+          <td style="padding:7px 12px;color:#ccc">Separate per spawned session, pruned by sessionRetention</td>
+        </tr>
+        <tr>
+          <td style="padding:7px 12px;color:#888">Stability</td>
+          <td style="padding:7px 12px;color:#4DFFA0">Stable — widely used in production</td>
+          <td style="padding:7px 12px;color:#FFB347">Experimental — API surface may change</td>
+        </tr>
+      </table>
+    </div>
+
+    <div class="s-title">Use Cases & Patterns</div>
+    <div class="three-col">
+      <div class="info-card">
+        <h4 class="c-pink">Channel-based routing (routing)</h4>
+        <p>Route your Slack workspace to a "work" agent with a work-focused SOUL.md, strict tools (no exec), and a GPT-4.1 model. Route personal WhatsApp DMs to a "personal" agent with a different persona and broader tool access. Both run from the same daemon with zero runtime overhead.</p>
+      </div>
+      <div class="info-card">
+        <h4 class="c-pink">Parallel research (spawning)</h4>
+        <p>Parent spawns N sub-agents with different research prompts concurrently (Promise.all on sessions_spawn calls). Each sub-agent uses a cheaper model for information gathering. Parent aggregates all results into a synthesis turn. Sub-agent costs accumulate separately — manually aggregate from sessionId if needed for accounting.</p>
+      </div>
+      <div class="info-card">
+        <h4 class="c-pink">Sandboxed execution (spawning)</h4>
+        <p>Parent has exec denied for safety. It spawns a sub-agent configured with a tightly sandboxed exec allowlist — only allowed to run tests in a specific temp directory with Docker isolation. Sub returns structured test output. Parent's exec access never expands; the sub's blast radius is confined to its workspace.</p>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+function showView(id) {
+  document.querySelectorAll('.view').forEach(v => v.classList.remove('active'));
+  const target = document.getElementById(id);
+  if (target) { target.classList.add('active'); window.scrollTo({ top: 0, behavior: 'instant' }); }
+}
+</script>
+</body>
+</html>
