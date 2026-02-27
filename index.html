@@ -483,7 +483,7 @@ body::after {
   <!-- OVERVIEW FLOW DIAGRAM -->
   <div class="s-title">Data Flow Across All Layers</div>
   <div class="flow-box">
-    <svg viewBox="0 0 1140 420" xmlns="http://www.w3.org/2000/svg">
+    <svg viewBox="0 0 1280 420" xmlns="http://www.w3.org/2000/svg">
       <defs>
         <marker id="ao"  markerWidth="7" markerHeight="7" refX="5" refY="3" orient="auto"><path d="M0,0 L0,6 L7,3z" fill="#F47B20"/></marker>
         <marker id="ab"  markerWidth="7" markerHeight="7" refX="5" refY="3" orient="auto"><path d="M0,0 L0,6 L7,3z" fill="#3BBFFF"/></marker>
@@ -563,15 +563,15 @@ body::after {
       <text x="766" y="344" text-anchor="middle" font-family="JetBrains Mono" font-size="8" fill="rgba(77,255,160,0.5)">executes locally</text>
 
       <!-- LLM Cloud -->
-      <ellipse cx="1000" cy="180" rx="82" ry="48" fill="rgba(244,123,32,0.07)" stroke="rgba(244,123,32,0.38)" stroke-width="1.5"/>
-      <text x="1000" y="174" text-anchor="middle" font-family="Syne" font-size="13" font-weight="800" fill="#F47B20">LLM</text>
-      <text x="1000" y="191" text-anchor="middle" font-family="JetBrains Mono" font-size="8.5" fill="#888">Claude/GPT/Gemini</text>
-      <text x="1000" y="205" text-anchor="middle" font-family="JetBrains Mono" font-size="8.5" fill="#888">Ollama/OpenRouter</text>
+      <ellipse cx="1110" cy="180" rx="82" ry="48" fill="rgba(244,123,32,0.07)" stroke="rgba(244,123,32,0.38)" stroke-width="1.5"/>
+      <text x="1110" y="174" text-anchor="middle" font-family="Syne" font-size="13" font-weight="800" fill="#F47B20">LLM</text>
+      <text x="1110" y="191" text-anchor="middle" font-family="JetBrains Mono" font-size="8.5" fill="#888">Claude/GPT/Gemini</text>
+      <text x="1110" y="205" text-anchor="middle" font-family="JetBrains Mono" font-size="8.5" fill="#888">Ollama/OpenRouter</text>
 
       <!-- summaryModel cloud -->
-      <ellipse cx="1000" cy="340" rx="68" ry="40" fill="rgba(255,179,71,0.06)" stroke="rgba(255,179,71,0.28)" stroke-width="1.3" stroke-dasharray="5 3"/>
-      <text x="1000" y="334" text-anchor="middle" font-family="Syne" font-size="11" font-weight="700" fill="#FFB347">summaryModel</text>
-      <text x="1000" y="350" text-anchor="middle" font-family="JetBrains Mono" font-size="8" fill="#888">Sonnet / Flash</text>
+      <ellipse cx="1110" cy="340" rx="68" ry="40" fill="rgba(255,179,71,0.06)" stroke="rgba(255,179,71,0.28)" stroke-width="1.3" stroke-dasharray="5 3"/>
+      <text x="1110" y="334" text-anchor="middle" font-family="Syne" font-size="11" font-weight="700" fill="#FFB347">summaryModel</text>
+      <text x="1110" y="350" text-anchor="middle" font-family="JetBrains Mono" font-size="8" fill="#888">Sonnet / Flash</text>
 
       <!-- Observability tap -->
       <rect x="678" y="380" width="276" height="24" rx="5" fill="rgba(45,212,191,0.05)" stroke="rgba(45,212,191,0.18)" stroke-width="1" stroke-dasharray="4 3"/>
@@ -588,20 +588,19 @@ body::after {
       <path d="M676,148 L622,158" stroke="#FFB347" stroke-width="1.4" fill="none" marker-end="url(#agold)" class="anim"/>
       <!-- Execution → Memory (remember() write-back) — NEW arrow -->
       <path d="M766,228 L766,212" stroke="#4DFFA0" stroke-width="1.4" fill="none" marker-end="url(#ag)" stroke-dasharray="5 3"/>
-      <!-- Reasoning → LLM -->
-      <path d="M622,175 L914,182" stroke="#F47B20" stroke-width="1.7" fill="none" marker-end="url(#ao)"/>
-      <!-- LLM → Reasoning (stream) -->
-      <path d="M914,166 L622,162" stroke="#F47B20" stroke-width="1.3" fill="none" marker-end="url(#ao)" stroke-dasharray="5 3"/>
-      <!-- Reasoning → Execution -->
+      <!-- Reasoning → LLM: elbow over top of boxes -->
+      <path d="M622,160 L622,38 L1028,38 L1028,136" stroke="#F47B20" stroke-width="1.7" fill="none" marker-end="url(#ao)"/>
+      <!-- LLM → Reasoning (stream): parallel track above -->
+      <path d="M1028,132 L1028,44 L622,44 L622,148" stroke="#F47B20" stroke-width="1.3" fill="none" marker-end="url(#ao)" stroke-dasharray="5 3"/>
       <path d="M622,270 L676,270" stroke="#4DFFA0" stroke-width="1.4" fill="none" marker-end="url(#ag)"/>
       <!-- Execution → Reasoning (tool_result) -->
       <path d="M676,290 L622,290" stroke="#4DFFA0" stroke-width="1.4" fill="none" marker-end="url(#ag)" stroke-dasharray="5 3"/>
-      <!-- Summarization → summaryModel -->
-      <path d="M622,210 Q840,210 928,310" stroke="#FFB347" stroke-width="1.3" fill="none" marker-end="url(#agold)" class="anim"/>
-      <!-- summaryModel → Memory write-back -->
-      <path d="M932,328 Q870,280 860,218" stroke="#FFB347" stroke-width="1.3" fill="none" marker-end="url(#agold)" stroke-dasharray="4 3"/>
-      <!-- Heartbeat self-loop -->
+      <!-- Summarization → summaryModel: down right corridor outside boxes -->
+      <path d="M622,214 L1042,214 L1042,302" stroke="#FFB347" stroke-width="1.3" fill="none" marker-end="url(#agold)" class="anim"/>
+      <!-- summaryModel → Memory write-back: up right corridor -->
+      <path d="M1042,300 L1042,90 L852,90" stroke="#FFB347" stroke-width="1.3" fill="none" marker-end="url(#agold)" stroke-dasharray="4 3"/>
       <path d="M275,174 Q355,140 355,200 Q355,222 374,200" stroke="#4DFFA0" stroke-width="1.3" fill="none" marker-end="url(#ag)" class="anim"/>
+      <text x="362" y="240" font-family="JetBrains Mono" font-size="7" fill="#4DFFA0" opacity="0.75">triggers normal flow</text>
       <!-- Cron trigger -->
       <path d="M275,152 Q410,118 422,152" stroke="#C084FC" stroke-width="1.3" fill="none" marker-end="url(#ap)" class="anim"/>
       <!-- Context guard check -->
@@ -609,14 +608,15 @@ body::after {
 
       <!-- Labels -->
       <text x="136" y="194" font-family="JetBrains Mono" font-size="8.5" fill="#F47B20" opacity="0.7">inbound</text>
-      <text x="694" y="120" font-family="JetBrains Mono" font-size="8" fill="#FFB347" opacity="0.7">read ctx</text>
-      <text x="694" y="158" font-family="JetBrains Mono" font-size="8" fill="#FFB347" opacity="0.7">write sum</text>
-      <text x="694" y="264" font-family="JetBrains Mono" font-size="8" fill="#4DFFA0" opacity="0.7">tool calls</text>
+      <text x="630" y="118" font-family="JetBrains Mono" font-size="7.5" fill="#FFB347" opacity="0.7">read →</text>
+      <text x="870" y="209" font-family="JetBrains Mono" font-size="7.5" fill="#FFB347" opacity="0.7">summ →</text>
+      
       <text x="694" y="294" font-family="JetBrains Mono" font-size="8" fill="#4DFFA0" opacity="0.7">tool_result</text>
       <text x="776" y="222" font-family="JetBrains Mono" font-size="7.5" fill="#4DFFA0" opacity="0.7">remember()</text>
-      <text x="730" y="172" font-family="JetBrains Mono" font-size="8" fill="#F47B20" opacity="0.7">LLM call</text>
-      <text x="730" y="158" font-family="JetBrains Mono" font-size="8" fill="#F47B20" opacity="0.7">stream ←</text>
-    </svg>
+      <text x="740" y="32" text-anchor="middle" font-family="JetBrains Mono" font-size="7.5" fill="#F47B20" opacity="0.85">→ LLM call</text>
+      <text x="740" y="57" text-anchor="middle" font-family="JetBrains Mono" font-size="7.5" fill="#F47B20" opacity="0.85">← stream</text>
+      <text x="1047" y="140" font-family="JetBrains Mono" font-size="7.5" fill="#FFB347" opacity="0.7">write back</text>
+
   </div>
 </div>
 
@@ -658,7 +658,7 @@ body::after {
         <text x="86" y="246" text-anchor="middle" font-family="JetBrains Mono" font-size="9.5" fill="#4DFFA0">Heartbeat Timer</text>
         <!-- Channel Adapter box -->
         <rect x="206" y="50" width="158" height="230" rx="9" fill="#161616" stroke="rgba(59,191,255,0.38)" stroke-width="1.5"/>
-        <text x="285" y="75" text-anchor="middle" font-family="Syne" font-size="12" font-weight="700" fill="#3BBFFF">Channel Adapters</text>
+        <text x="285" y="75" text-anchor="middle" font-family="Syne" font-size="10" font-weight="700" fill="#3BBFFF">Channel Adapters</text>
         <text x="285" y="93" text-anchor="middle" font-family="JetBrains Mono" font-size="8.5" fill="#555">normalize(raw) → Envelope</text>
         <rect x="220" y="106" width="130" height="22" rx="4" fill="rgba(59,191,255,0.07)" stroke="rgba(59,191,255,0.15)" stroke-width="1"/>
         <text x="285" y="121" text-anchor="middle" font-family="JetBrains Mono" font-size="8.5" fill="#3BBFFF">StdinAdapter</text>
@@ -1136,11 +1136,11 @@ setInterval(() =&gt; router.dispatch({
         <!-- Arrows -->
         <path d="M144,186 L202,140" stroke="#FFB347" stroke-width="1.4" fill="none" marker-end="url(#magold)"/>
         <path d="M202,200 L144,200" stroke="#FFB347" stroke-width="1.4" fill="none" marker-end="url(#magold)" stroke-dasharray="4 3"/>
-        <path d="M144,180 L462,120" stroke="#4DFFA0" stroke-width="1.3" fill="none" marker-end="url(#mag)" stroke-dasharray="4 3"/>
+        <path d="M144,180 L144,18 L462,18 L462,64" stroke="#4DFFA0" stroke-width="1.3" fill="none" marker-end="url(#mag)" stroke-dasharray="4 3"/>
         <path d="M688,120 L748,150" stroke="#3BBFFF" stroke-width="1.2" fill="none" marker-end="url(#mab)" stroke-dasharray="4 3"/>
         <path d="M688,280 L748,280" stroke="#3BBFFF" stroke-width="1.2" fill="none" marker-end="url(#mab)" stroke-dasharray="4 3"/>
         <text x="152" y="165" font-family="JetBrains Mono" font-size="7.5" fill="#FFB347" opacity="0.8">R/W session</text>
-        <text x="280" y="175" font-family="JetBrains Mono" font-size="7.5" fill="#4DFFA0" opacity="0.7">read bootstrap</text>
+        <text x="240" y="13" font-family="JetBrains Mono" font-size="7.5" fill="#4DFFA0" opacity="0.7">read bootstrap</text>
         <text x="694" y="114" font-family="JetBrains Mono" font-size="7.5" fill="#3BBFFF" opacity="0.7">index</text>
         <text x="694" y="278" font-family="JetBrains Mono" font-size="7.5" fill="#3BBFFF" opacity="0.7">semantic recall</text>
       </svg>
